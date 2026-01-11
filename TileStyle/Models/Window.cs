@@ -13,24 +13,22 @@ public partial class Window
 
     public Vector2 Position
     {
-        get;
+        get => new(_rect.X, _rect.Y);
         set
         {
-            field = value;
-            _rect.X = (int)field.X;
-            _rect.Y = (int)field.Y;
+            _rect.X = (int)value.X;
+            _rect.Y = (int)value.Y;
             ReRenderWindow();
         }
     }
 
     public Vector2 Size
     {
-        get;
+        get => new(_rect.Width, _rect.Height);
         set
         {
-            field = value;
-            _rect.Width = (int)field.X;
-            _rect.Height = (int)field.Y;
+            _rect.Width = (int)value.X;
+            _rect.Height = (int)value.Y;
             ReRenderWindow();
         }
     }
@@ -46,10 +44,10 @@ public partial class Window
 
         GetWindowRect(handle, out var rect);
         _rect = new Rectangle(
-            rect.Top,
             rect.Left,
+            rect.Top,
             rect.Right - rect.Left,
-            rect.Top - rect.Bottom
+            rect.Bottom - rect.Top
         );
     }
 

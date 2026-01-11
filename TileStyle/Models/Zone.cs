@@ -9,6 +9,7 @@ public class Zone
     public LayoutMode Mode { get; private set; } = LayoutMode.Horizontal;
 
     private readonly List<Window> _windows = new();
+    public IReadOnlyList<Window> Windows => _windows.AsReadOnly();
 
     private void UpdateZone()
     {
@@ -77,9 +78,11 @@ public class Zone
         UpdateZone();
     }
 
-    public void RemoveWindow(Window window)
+    public void RemoveWindow(IntPtr windowHandle)
     {
-        _windows.Remove(window);
+        _windows.RemoveAll(w => w.Handle == windowHandle);
         UpdateZone();
     }
+    
+    public bool IsEmpty => _windows.Count == 0;
 }

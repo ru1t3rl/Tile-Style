@@ -45,17 +45,6 @@ public partial class WindowManager : IDisposable
         }
     }
 
-    // private void OnWindowEvent(object? sender, WindowEventArgs e)
-    // {
-    //     var window = new Window(e.WindowHandle);
-    //     _logger.LogDebug("Update triggered by {title}", window.Title);
-    //
-    //     // Delay slightly to let window state stabilize
-    //     Task
-    //         .Delay(50)
-    //         .ContinueWith(_ => { _synchronizationContext?.Post(_ => UpdateWindows(), null); });
-    // }
-
     private void AddNewWindow(object? sender, WindowEventArgs e)
     {
         Window window = new Window(e.WindowHandle);
@@ -71,14 +60,56 @@ public partial class WindowManager : IDisposable
         {
             return;
         }
-        
-        // Find best fitting zone
-        // Check if new zone is required
-        // Add window to zone
+
+        int bestDistance = CalculateDistance(_zones[0], window);
+        Zone bestZone = _zones[0];
+        foreach (Zone zone in _zones)
+        {
+            int distance = CalculateDistance(zone, window);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestZone = zone;
+            }
+        }
+
+        _windows.Add(window);
+        bestZone.AddWindow(_windows[^1]);
     }
 
     private void CloseWindow(object? sender, WindowEventArgs e)
     {
+        Window? window = _windows.SingleOrDefault(w => w.Handle == e.WindowHandle);
+        if (window is null)
+        {
+            _logger.LogWarning("Window {WindowHandle} was not found", e.WindowHandle);
+            return;
+        }
+
+        foreach (Zone zone in _zones)
+        {
+            if (zone.Windows.All(w => w.Handle != e.WindowHandle))
+            {
+                continue;
+            }
+
+            zone.RemoveWindow(e.WindowHandle);
+            if (zone.IsEmpty)
+            {
+                UpdateWindows();
+                break;
+            }
+        }
+    }
+
+    private int CalculateDistance(Zone zone, Window window)
+    {
+        Rectangle zoneArea = zone.Area;
+        int dX = (int)window.Position.X - zoneArea.X;
+        dX *= dX;
+        int dY = (int)window.Position.Y - zoneArea.Y;
+        dY *= dY;
+        return dX + dY;
     }
 
     /// <summary>
@@ -131,30 +162,30 @@ public partial class WindowManager : IDisposable
     /// <returns>A list of windows</returns>
     private List<Window> GetWindows(bool onlyNewWindows = false)
     {
-        List<Window> newWindows = new();
+        List<IntPtr> newWindowHandles = new();
+        IntPtr[] existingWindows = _windows.Select(window => window.Handle).ToArray();
 
         Guid currentDesktop = _virtualDesktop.GetCurrentDesktop();
-        EnumWindows((hwnd, lParam) =>
+        EnumWindows((hwnd, lParam_) =>
         {
-            Window window = new(hwnd);
-            if (!window.Visible ||
-                window.Minimized)
+            if (!onlyNewWindows || existingWindows.All(h => h != hwnd))
             {
-                return true;
-            }
-
-            if (
-                !string.IsNullOrEmpty(window.Title) &&
-                ShouldManageWindow(window, currentDesktop) &&
-                (!onlyNewWindows || !IsManagedWindow(hwnd))
-            )
-            {
-                newWindows.Add(window);
+                newWindowHandles.Add(hwnd);
             }
 
             return true;
         }, IntPtr.Zero);
 
+        List<Window> newWindows = newWindowHandles
+            .Select(handle => new Window(handle))
+            .Where(window => window.Visible &&
+                             !window.Minimized &&
+                             !string.IsNullOrEmpty(window.Title) &&
+                             ShouldManageWindow(window, currentDesktop) &&
+                             !IsManagedWindow(window.Handle))
+            .ToList();
+
+        _logger.LogInformation("GetWindows found {Count} windows", newWindowHandles.Count);
         return newWindows;
     }
 

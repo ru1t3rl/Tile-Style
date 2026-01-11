@@ -2,6 +2,6 @@
 
 public enum MoveDirection
 {
-    Left = -1,
-    Right = 1,
+    Left = 3,
+    Right = 4,
 }

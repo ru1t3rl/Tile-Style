@@ -34,9 +34,9 @@ static class Program
     {
         services.AddSingleton<WindowManagerContext>();
         services.AddSingleton<WindowManager>();
-        services.AddSingleton<VirtualDesktopHelper>();
         services.AddSingleton<WindowEventHook>();
-
+        
+        services.AddSingleton<VirtualDesktopHelper>();
         services.AddSingleton<HiddenWindow>();
 
         services.Scan(scan => scan
