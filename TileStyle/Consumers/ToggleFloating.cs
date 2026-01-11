@@ -9,7 +9,7 @@ public class ToggleFloating : IKeyConsumer
 
     public HotKey HotKey => new(
         Keys.F,
-        ModifierKeys.Win
+        ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );
 
     public ToggleFloating(WindowManager windowManager)
@@ -19,7 +19,7 @@ public class ToggleFloating : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        // _windowManager.ToggleFloating();
+        _windowManager.ToggleActiveFloating();
         return Task.CompletedTask;
     }
 }

@@ -6,6 +6,8 @@ namespace TileStyle;
 
 public partial class WindowManager : IDisposable
 {
+    public const int MAX_WINDOWS_PER_ZONE = 3;
+
     private readonly ILogger<WindowManager> _logger;
     private readonly WindowEventHook _windowEventHook;
     private SynchronizationContext? _synchronizationContext;
@@ -17,8 +19,7 @@ public partial class WindowManager : IDisposable
 
     private bool _tilingEnabled = true;
 
-    private IntPtr _activeWindowHandle = IntPtr.Zero;
-    public IntPtr ActiveWindowHandle => _activeWindowHandle;
+    public IntPtr ActiveWindowHandle => GetForegroundWindow();
 
     public WindowManager(WindowEventHook windowEventHook, VirtualDesktopHelper virtualDesktop, ILogger<WindowManager> logger)
     {
@@ -46,6 +47,27 @@ public partial class WindowManager : IDisposable
         {
             UpdateWindows();
         }
+    }
+
+    public void ToggleActiveFloating()
+    {
+        Window? window = _windows.SingleOrDefault(w => w.Handle == ActiveWindowHandle);
+        if (window is null)
+        {
+            _logger.LogWarning("Window {WindowHandle} was not found", ActiveWindowHandle);
+            return;
+        }
+
+        if (window.Floating)
+        {
+            _windows.Remove(window);
+            AddNewWindow(this, new WindowEventArgs(window.Handle));
+            return;
+        }
+
+        Zone zone = _zones.Single(z => z.Windows.Any(w => w.Handle == window.Handle));
+        zone.RemoveWindow(window.Handle);
+        window.Floating = !window.Floating;
     }
 
     private void AddNewWindow(object? sender, WindowEventArgs e)
@@ -132,11 +154,11 @@ public partial class WindowManager : IDisposable
         _windows.Clear();
         _windows.AddRange(windows);
 
-        int newZoneCount = (int)Math.Max(1, Math.Floor(_windows.Count / 2f));
-        int windowsPerZone = _windows.Count / newZoneCount;
+        int newZoneCount = (int)Math.Max(1, Math.Ceiling((_windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
+        int windowsPerZone = (int)Math.Ceiling(_windows.Count / (float)newZoneCount);
 
         Guid desktopId = _virtualDesktop.GetCurrentDesktop();
-        Screen screen = Screen.FromHandle(_activeWindowHandle);
+        Screen screen = Screen.FromHandle(ActiveWindowHandle);
         Rectangle workingArea = screen.WorkingArea;
         Rectangle zoneArea = screen.WorkingArea with
         {
