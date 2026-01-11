@@ -11,6 +11,8 @@ public partial class Window
 
     public string Title { get; init; }
 
+    public int PositionOffset { get; set; } = 0;
+
     public Vector2 Position
     {
         get => new(_rect.X, _rect.Y);

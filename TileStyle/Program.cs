@@ -48,7 +48,7 @@ static class Program
         services.AddSerilog(config =>
         {
             config.WriteTo.Console();
-            config.MinimumLevel.Debug();
+            config.MinimumLevel.Information();
         });
 
         services.AddHostedService<KeyboardEventService>();

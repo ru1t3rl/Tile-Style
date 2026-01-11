@@ -1,17 +1,19 @@
-﻿using TileStyle.Keyboard;
+﻿using Microsoft.Extensions.Logging;
+using TileStyle.Keyboard;
 using TileStyle.Models;
 
 namespace TileStyle.Consumers.WindowMovement;
 
-public class MoveRight : IKeyConsumer
+public class MoveRight : MoveBase
 {
-    public HotKey HotKey => new(
+    public MoveRight(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
+    {
+    }
+
+    public override HotKey HotKey => new HotKey(
         Keys.Right,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );
 
-    public Task ExecuteAsync(object? sender, EventArgs e)
-    {
-        return Task.CompletedTask;
-    }
+    protected override MoveDirection MoveDirection => MoveDirection.Right;
 }
