@@ -5,7 +5,7 @@ namespace TileStyle.Windows;
 public partial class WindowEventHook : IDisposable
 {
     private readonly ILogger<WindowEventHook> _logger;
-    private IntPtr _hookHandle;
+    private IntPtr[] _hookHandles = new IntPtr[3];
 
     public event EventHandler<WindowEventArgs>? WindowCreated;
     public event EventHandler<WindowEventArgs>? WindowDestroyed;
@@ -19,7 +19,7 @@ public partial class WindowEventHook : IDisposable
         _logger = logger;
         WinEventDelegate hookDelegate = new(WindowEventProcessor);
 
-        _hookHandle = SetWinEventHook(
+        _hookHandles[0] = SetWinEventHook(
             EVENT_OBJECT_CREATE,
             EVENT_OBJECT_DESTROY,
             IntPtr.Zero,
@@ -29,9 +29,19 @@ public partial class WindowEventHook : IDisposable
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
         );
 
-        SetWinEventHook(
+        _hookHandles[1] = SetWinEventHook(
             EVENT_OBJECT_SHOW,
             EVENT_OBJECT_HIDE,
+            IntPtr.Zero,
+            hookDelegate,
+            0,
+            0,
+            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
+        );
+
+        _hookHandles[2] = SetWinEventHook(
+            EVENT_SYSTEM_MINIMIZESTART,
+            EVENT_SYSTEM_MINIMIZEEND,
             IntPtr.Zero,
             hookDelegate,
             0,
@@ -88,12 +98,10 @@ public partial class WindowEventHook : IDisposable
 
     public void Dispose()
     {
-        if (_hookHandle == IntPtr.Zero)
+        for (int iHook = 0; iHook < _hookHandles.Length; iHook++)
         {
-            return;
+            UnhookWinEvent(_hookHandles[iHook]);
+            _hookHandles[iHook] = IntPtr.Zero;
         }
-
-        UnhookWinEvent(_hookHandle);
-        _hookHandle = IntPtr.Zero;
     }
 }

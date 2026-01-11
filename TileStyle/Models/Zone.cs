@@ -69,12 +69,14 @@ public class Zone
     public void AddWindowRange(Window[] windows)
     {
         _windows.AddRange(windows);
+        _windows.Sort((w1, w2) => (int)w1.Position.X - (int)w2.Position.X);
         UpdateZone();
     }
 
     public void AddWindow(Window window)
     {
         _windows.Add(window);
+        _windows.Sort((w1, w2) => (int)w1.Position.X - (int)w2.Position.X);
         UpdateZone();
     }
 
@@ -83,6 +85,6 @@ public class Zone
         _windows.RemoveAll(w => w.Handle == windowHandle);
         UpdateZone();
     }
-    
+
     public bool IsEmpty => _windows.Count == 0;
 }

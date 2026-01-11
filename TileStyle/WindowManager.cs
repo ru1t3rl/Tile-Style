@@ -13,9 +13,12 @@ public partial class WindowManager : IDisposable
 
     private readonly List<Window> _windows = new();
     private readonly List<Zone> _zones = new();
+    public List<Zone> Zones => _zones;
 
     private bool _tilingEnabled = true;
+
     private IntPtr _activeWindowHandle = IntPtr.Zero;
+    public IntPtr ActiveWindowHandle => _activeWindowHandle;
 
     public WindowManager(WindowEventHook windowEventHook, VirtualDesktopHelper virtualDesktop, ILogger<WindowManager> logger)
     {
@@ -27,7 +30,7 @@ public partial class WindowManager : IDisposable
         _windowEventHook.WindowDestroyed += CloseWindow;
         _windowEventHook.WindowShown += AddNewWindow;
         _windowEventHook.WindowMinimized += CloseWindow;
-        // _windowEventHook.WindowRestored += OnWindowEvent;
+        _windowEventHook.WindowRestored += AddNewWindow;
     }
 
     public void InitializeContext()
@@ -85,6 +88,8 @@ public partial class WindowManager : IDisposable
             _logger.LogWarning("Window {WindowHandle} was not found", e.WindowHandle);
             return;
         }
+
+        _windows.Remove(window);
 
         foreach (Zone zone in _zones)
         {
