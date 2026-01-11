@@ -22,8 +22,8 @@ public class SplitHorizontal : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        Zone? activeZone =
-            _windowManager.Zones.SingleOrDefault(z => z.Windows.Any(w => w.Handle == _windowManager.ActiveWindowHandle));
+        Zone? activeZone = _windowManager.Zones
+            .SingleOrDefault(z => z.Windows.Any(w => w.Handle == _windowManager.ActiveWindowHandle));
 
         if (activeZone is null)
         {
