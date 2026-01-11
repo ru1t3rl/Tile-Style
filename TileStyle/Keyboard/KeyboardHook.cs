@@ -1,18 +1,29 @@
-﻿using TileStyle.Window;
+﻿using Microsoft.Extensions.Logging;
+using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Keyboard;
 
 public partial class KeyboardHook : IDisposable
 {
+    private readonly ILogger<KeyboardHook> _logger;
     private readonly HiddenWindow _window;
-    private int _hookId;
+    private readonly Dictionary<int, HotKey> _registeredHotKeys = new();
+    private int _hookCounter;
 
     public event EventHandler<KeyPressedEventArgs>? KeyPressed;
 
-    public KeyboardHook(HiddenWindow window)
+    public List<HotKey> RegisteredHotKeys => _registeredHotKeys
+        .Select(k => k.Value)
+        .Distinct()
+        .ToList();
+
+
+    public KeyboardHook(ILogger<KeyboardHook> logger, HiddenWindow window)
     {
+        _logger = logger;
         _window = window;
-        _window.HotKeyPressed += OnKeyPressed()
+        _window.HotKeyPressed += OnKeyPressed;
     }
 
 
@@ -24,9 +35,15 @@ public partial class KeyboardHook : IDisposable
     /// <returns>An int representing the hook id.</returns>
     public int RegisterHotKey(Keys key, ModifierKeys modifier = ModifierKeys.None)
     {
-        _hookId++;
-        RegisterHotKey(_window.Handle, _hookId, (uint)modifier, (uint)key);
-        return _hookId;
+        _hookCounter++;
+        RegisterHotKey(_window.Handle, _hookCounter, (uint)modifier, (uint)key);
+
+        HotKey hotKey = new(key, modifier);
+        _registeredHotKeys.Add(_hookCounter, hotKey);
+
+        _logger.LogDebug("Registered HotKey {hotKey} with hook Id {hookId}.", hotKey, _hookCounter);
+
+        return _hookCounter;
     }
 
     /// <summary>
@@ -36,15 +53,37 @@ public partial class KeyboardHook : IDisposable
     public void UnregisterHotKey(int hookId)
     {
         UnregisterHotKey(_window.Handle, hookId);
+        _registeredHotKeys.Remove(hookId);
+
+        _logger.LogDebug("Unregistered HotKey with hook Id {hookId}.", hookId);
     }
 
-    protected virtual void OnKeyPressed(HotKeyEventArgs e)
+    /// <summary>
+    /// Unregister all events using the event hookId's.
+    /// </summary>
+    public void UnregisterAllHotKeys()
     {
-        KeyPressed?.Invoke(this, e);
+        List<int> keys = _registeredHotKeys.Keys.ToList();
+        foreach (int key in keys)
+        {
+            UnregisterHotKey(key);
+        }
+    }
+
+    protected virtual void OnKeyPressed(object? sender, HotKeyEventArgs e)
+    {
+        if (!_registeredHotKeys.TryGetValue(e.HotKeyHookId, out var hotKey))
+        {
+            _logger.LogError("Event triggered for HotKey with hook Id {Id}. But no binding found...", e.HotKeyHookId);
+            return;
+        }
+
+        KeyPressedEventArgs eventArgs = new(hotKey.ModifierKeys, hotKey.MainKey);
+        KeyPressed?.Invoke(sender, eventArgs);
     }
 
     public void Dispose()
     {
-        UnregisterHotKey(IntPtr.Zero, _hookId);
+        UnregisterHotKey(IntPtr.Zero, _hookCounter);
     }
 }

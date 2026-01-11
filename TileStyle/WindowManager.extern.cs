@@ -6,8 +6,6 @@ namespace TileStyle;
 public partial class WindowManager
 {
     private const int WM_CLOSE = 0x0010;
-    private const uint SWP_NOZORDER = 0x0004;
-    private const uint SWP_NOACTIVATE = 0x0010;
     private const int GWL_STYLE = -16;
     private const int GWL_EXSTYLE = -20;
     private const int WS_CAPTION = 0x00C00000;
@@ -16,30 +14,6 @@ public partial class WindowManager
     [DllImport("user32.dll")]
     private extern static bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 
-    [DllImport("user32.dll")]
-    private extern static bool IsWindowVisible(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private extern static bool IsIconic(IntPtr hWnd);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private extern static int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-    [DllImport("user32.dll")]
-    private extern static int GetWindowTextLength(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private extern static bool SetWindowPos(
-        IntPtr hWnd,
-        IntPtr hWndInsertAfter,
-        int X,
-        int Y,
-        int cx,
-        int cy,
-        uint uFlags);
-
-    [DllImport("user32.dll")]
-    private extern static bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
     private extern static IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
@@ -48,8 +22,7 @@ public partial class WindowManager
     private extern static int GetWindowLong(IntPtr hWnd, int nIndex);
 
     [DllImport("user32.dll")]
-    private extern static bool GetWindowRect(IntPtr hWnd, out InternalRect lpRect);
-
+    private extern static bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     private extern static IntPtr GetForegroundWindow();
 

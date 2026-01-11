@@ -2,7 +2,7 @@
 
 namespace TileStyle.Models;
 
-public record struct KeyCombination(
+public record struct HotKey(
     Keys MainKey,
     ModifierKeys ModifierKeys
 );

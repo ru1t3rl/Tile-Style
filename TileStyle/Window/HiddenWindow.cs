@@ -1,6 +1,6 @@
 ﻿using TileStyle.Keyboard;
 
-namespace TileStyle.Window;
+namespace TileStyle.Windows;
 
 public class HiddenWindow : NativeWindow, IDisposable
 {

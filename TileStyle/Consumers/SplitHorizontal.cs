@@ -7,7 +7,7 @@ public class SplitHorizontal : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
 
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.H,
         ModifierKeys.Win
     );
@@ -19,7 +19,7 @@ public class SplitHorizontal : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.SplitHorizontal();
+        // _windowManager.SplitHorizontal();
         return Task.CompletedTask;
     }
 }

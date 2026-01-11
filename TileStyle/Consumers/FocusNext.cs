@@ -8,7 +8,7 @@ public class FocusNext : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
 
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.J,
         ModifierKeys.Win
     );
@@ -20,7 +20,7 @@ public class FocusNext : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.FocusNext();
+        // _windowManager.FocusNext();
         return Task.CompletedTask;
     }
 }

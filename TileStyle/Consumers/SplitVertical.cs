@@ -6,7 +6,7 @@ namespace TileStyle.Consumers;
 public class SplitVertical : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.V,
         ModifierKeys.Win
     );
@@ -18,7 +18,7 @@ public class SplitVertical : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.SplitVertical();
+        // _windowManager.SplitVertical();
         return Task.CompletedTask;
     }
 }

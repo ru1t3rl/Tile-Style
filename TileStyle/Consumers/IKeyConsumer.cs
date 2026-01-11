@@ -4,6 +4,6 @@ namespace TileStyle.Consumers;
 
 public interface IKeyConsumer
 {
-    KeyCombination HotKey { get; }
+    HotKey HotKey { get; }
     Task ExecuteAsync(object? sender, EventArgs e);
 }

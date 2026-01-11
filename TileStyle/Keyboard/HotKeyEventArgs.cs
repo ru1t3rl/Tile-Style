@@ -2,10 +2,10 @@
 
 public class HotKeyEventArgs : EventArgs
 {
-    public int HotKeyId { get; init; }
+    public int HotKeyHookId { get; init; }
 
-    public HotKeyEventArgs(int hotKeyId)
+    public HotKeyEventArgs(int hotKeyHookId)
     {
-        HotKeyId = hotKeyId;
+        HotKeyHookId = hotKeyHookId;
     }
 }

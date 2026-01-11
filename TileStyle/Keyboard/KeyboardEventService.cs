@@ -7,7 +7,7 @@ namespace TileStyle.Keyboard;
 
 public class KeyboardEventService : BackgroundService
 {
-    private readonly FrozenDictionary<KeyCombination, IKeyConsumer[]> _keyConsumers;
+    private readonly FrozenDictionary<HotKey, IKeyConsumer[]> _keyConsumers;
     private readonly KeyboardHook _keyboardHook;
     private readonly List<int> _keyboardHookIds = new();
 
@@ -26,7 +26,7 @@ public class KeyboardEventService : BackgroundService
 
     private void RegisterKeyCombinations()
     {
-        foreach (KeyCombination keyBinding in _keyConsumers.Keys)
+        foreach (HotKey keyBinding in _keyConsumers.Keys)
         {
             int hookId = _keyboardHook.RegisterHotKey(keyBinding.MainKey, keyBinding.ModifierKeys);
             _keyboardHookIds.Add(hookId);
@@ -59,8 +59,8 @@ public class KeyboardEventService : BackgroundService
 
     private async void OnKeyPressed(object? sender, KeyPressedEventArgs e)
     {
-        KeyCombination keyCombination = new(e.Key, e.Modifier);
-        if (!_keyConsumers.TryGetValue(keyCombination, out IKeyConsumer[]? consumers))
+        HotKey hotKey = new(e.Key, e.Modifier);
+        if (!_keyConsumers.TryGetValue(hotKey, out IKeyConsumer[]? consumers))
         {
             return;
         }

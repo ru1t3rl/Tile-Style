@@ -5,7 +5,7 @@ namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveUp : IKeyConsumer
 {
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Up,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );

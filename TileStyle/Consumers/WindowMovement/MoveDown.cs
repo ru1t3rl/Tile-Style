@@ -5,7 +5,7 @@ namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveDown : IKeyConsumer
 {
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Down,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace TileStyle.Window;
+namespace TileStyle.Windows;
 
 public partial class WindowEventHook
 {

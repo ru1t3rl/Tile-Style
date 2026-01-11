@@ -1,8 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using TileStyle.Consumers;
 using TileStyle.Keyboard;
-using TileStyle.Window;
+using TileStyle.Windows;
 
 namespace TileStyle;
 
@@ -21,6 +22,9 @@ static class Program
         host.StartAsync();
 
         WindowManagerContext context = host.Services.GetRequiredService<WindowManagerContext>();
+        WindowManager windowManager = host.Services.GetRequiredService<WindowManager>();
+        windowManager.InitializeContext();
+        
         Application.Run(context);
 
         host.StopAsync().Wait();
@@ -40,6 +44,12 @@ static class Program
             .AddClasses(c => c.AssignableTo<IKeyConsumer>())
             .AsImplementedInterfaces()
         );
+
+        services.AddSerilog(config =>
+        {
+            config.WriteTo.Console();
+            config.MinimumLevel.Debug();
+        });
 
         services.AddHostedService<KeyboardEventService>();
 

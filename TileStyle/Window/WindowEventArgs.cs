@@ -1,4 +1,4 @@
-﻿namespace TileStyle.Window;
+﻿namespace TileStyle.Windows;
 
 public class WindowEventArgs : EventArgs
 {

@@ -7,7 +7,7 @@ public class MoveToDesktopLeft : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
 
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Left,
         ModifierKeys.Win | ModifierKeys.Control
     );
@@ -19,7 +19,7 @@ public class MoveToDesktopLeft : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.MoveWindowToDesktop((int)MoveDirection.Left);
+        // _windowManager.MoveWindowToDesktop((int)MoveDirection.Left);
         return Task.CompletedTask;
     }
 }

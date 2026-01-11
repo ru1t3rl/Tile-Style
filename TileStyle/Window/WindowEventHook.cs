@@ -1,7 +1,10 @@
-﻿namespace TileStyle.Window;
+﻿using Microsoft.Extensions.Logging;
+
+namespace TileStyle.Windows;
 
 public partial class WindowEventHook : IDisposable
 {
+    private readonly ILogger<WindowEventHook> _logger;
     private IntPtr _hookHandle;
 
     public event EventHandler<WindowEventArgs>? WindowCreated;
@@ -10,8 +13,10 @@ public partial class WindowEventHook : IDisposable
     public event EventHandler<WindowEventArgs>? WindowMinimized;
     public event EventHandler<WindowEventArgs>? WindowRestored;
 
-    public WindowEventHook()
+
+    public WindowEventHook(ILogger<WindowEventHook> logger)
     {
+        _logger = logger;
         WinEventDelegate hookDelegate = new(WindowEventProcessor);
 
         _hookHandle = SetWinEventHook(
@@ -52,22 +57,31 @@ public partial class WindowEventHook : IDisposable
         switch (eventType)
         {
             case EVENT_OBJECT_CREATE:
+                _logger.LogDebug("Triggered Event Object Create ({eventType}).", eventType);
                 WindowCreated?.Invoke(this, args);
                 break;
             case EVENT_OBJECT_DESTROY:
+                _logger.LogDebug("Triggered Event Object Destroy ({eventType}).", eventType);
                 WindowDestroyed?.Invoke(this, args);
                 break;
             case EVENT_OBJECT_SHOW:
+                _logger.LogDebug("Triggered Event Object Show ({eventType}).", eventType);
                 WindowShown?.Invoke(this, args);
                 break;
             case EVENT_OBJECT_HIDE:
+                _logger.LogDebug("Triggered Event Object Hide ({eventType}).", eventType);
                 WindowMinimized?.Invoke(this, args);
                 break;
             case EVENT_SYSTEM_MINIMIZESTART:
+                _logger.LogDebug("Triggered Event Minimize Start ({eventType}).", eventType);
                 WindowMinimized?.Invoke(this, args);
                 break;
             case EVENT_SYSTEM_MINIMIZEEND:
+                _logger.LogDebug("Triggered Event Minimize End ({eventType}).", eventType);
                 WindowRestored?.Invoke(this, args);
+                break;
+            default:
+                _logger.LogWarning("Unhandled event type {eventType}.", eventType);
                 break;
         }
     }

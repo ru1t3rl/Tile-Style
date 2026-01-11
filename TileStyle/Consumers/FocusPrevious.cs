@@ -7,7 +7,7 @@ public class FocusPrevious : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
 
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.K,
         ModifierKeys.Win
     );
@@ -19,7 +19,7 @@ public class FocusPrevious : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.FocusPrevious();
+        // _windowManager.FocusPrevious();
         return Task.CompletedTask;
     }
 }

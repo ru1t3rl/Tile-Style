@@ -1,312 +1,193 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
-using System.Windows.Forms.Design.Behavior;
-using TileStyle.Window;
+﻿using Microsoft.Extensions.Logging;
+using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle;
 
 public partial class WindowManager : IDisposable
 {
+    private readonly ILogger<WindowManager> _logger;
+    private readonly WindowEventHook _windowEventHook;
+    private SynchronizationContext? _synchronizationContext;
+    private readonly VirtualDesktopHelper _virtualDesktop;
+
+    private readonly List<Window> _windows = new();
+    private readonly List<Zone> _zones = new();
+
     private bool _tilingEnabled = true;
-    private readonly Dictionary<Guid, List<IntPtr>> _desktopWindows = new Dictionary<Guid, List<IntPtr>>();
-    private readonly HashSet<IntPtr> _floatingWindows = new HashSet<IntPtr>();
-    private IntPtr _activeWindow;
-    private LayoutMode _mode = LayoutMode.Horizontal;
-    private readonly VirtualDesktopHelper _desktopHelper;
-    private readonly WindowEventHook _eventHook;
-    private readonly SynchronizationContext? _syncContext;
+    private IntPtr _activeWindowHandle = IntPtr.Zero;
 
-    public enum LayoutMode
+    public WindowManager(WindowEventHook windowEventHook, VirtualDesktopHelper virtualDesktop, ILogger<WindowManager> logger)
     {
-        Horizontal,
-        Vertical
+        _windowEventHook = windowEventHook;
+        _virtualDesktop = virtualDesktop;
+        _logger = logger;
+
+        _windowEventHook.WindowCreated += AddNewWindow;
+        _windowEventHook.WindowDestroyed += CloseWindow;
+        _windowEventHook.WindowShown += AddNewWindow;
+        _windowEventHook.WindowMinimized += CloseWindow;
+        // _windowEventHook.WindowRestored += OnWindowEvent;
     }
 
-    public WindowManager(VirtualDesktopHelper desktopHelper, WindowEventHook eventHook)
+    public void InitializeContext()
     {
-        _syncContext = SynchronizationContext.Current;
-        _desktopHelper = desktopHelper;
-        _eventHook = eventHook;
-
-        _eventHook.WindowCreated += OnWindowEvent;
-        _eventHook.WindowDestroyed += OnWindowEvent;
-        _eventHook.WindowShown += OnWindowEvent;
-        _eventHook.WindowMinimized += OnWindowEvent;
-        _eventHook.WindowRestored += OnWindowEvent;
-
-        RefreshWindows();
-    }
-
-    private void OnWindowEvent(object? sender, WindowEventArgs e)
-    {
-        // Delay slightly to let window state stabilize
-        Task.Delay(50).ContinueWith(_ => { _syncContext?.Post(_ => RefreshWindows(), null); });
-    }
-
-    public void RefreshWindows()
-    {
+        _synchronizationContext = SynchronizationContext.Current;
         UpdateWindows();
     }
 
     public void ToggleTiling()
     {
         _tilingEnabled = !_tilingEnabled;
-        if (_tilingEnabled) TileWindows();
-        else RestoreWindows();
-    }
-
-    public void ToggleFloating()
-    {
-        IntPtr hwnd = GetForegroundWindow();
-        if (hwnd == IntPtr.Zero) return;
-
-        if (_floatingWindows.Contains(hwnd))
+        if (!_tilingEnabled)
         {
-            _floatingWindows.Remove(hwnd);
-        }
-        else
-        {
-            _floatingWindows.Add(hwnd);
-        }
-
-        RefreshWindows();
-    }
-
-    public void MoveWindowInGrid(int deltaX, int deltaY)
-    {
-        Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
-        if (!_desktopWindows.ContainsKey(currentDesktop)) return;
-
-        var windows = _desktopWindows[currentDesktop];
-        IntPtr hwnd = GetForegroundWindow();
-
-        int currentIndex = windows.IndexOf(hwnd);
-        if (currentIndex == -1) return;
-
-        int newIndex;
-
-        if (_mode == LayoutMode.Horizontal)
-        {
-            // In horizontal mode, left/right moves in the list
-            newIndex = currentIndex + deltaX;
-        }
-        else
-        {
-            // In vertical mode, up/down moves in the list
-            newIndex = currentIndex + deltaY;
-        }
-
-        // Clamp to valid range
-        newIndex = Math.Max(0, Math.Min(windows.Count - 1, newIndex));
-
-        if (newIndex != currentIndex)
-        {
-            // Swap windows in the list
-            var temp = windows[currentIndex];
-            windows[currentIndex] = windows[newIndex];
-            windows[newIndex] = temp;
-
-            TileWindows();
-            SetForegroundWindow(hwnd);
+            UpdateWindows();
         }
     }
 
-    public void MoveWindowToDesktop(int direction)
-    {
-        IntPtr hwnd = GetForegroundWindow();
-        if (hwnd == IntPtr.Zero) return;
+    // private void OnWindowEvent(object? sender, WindowEventArgs e)
+    // {
+    //     var window = new Window(e.WindowHandle);
+    //     _logger.LogDebug("Update triggered by {title}", window.Title);
+    //
+    //     // Delay slightly to let window state stabilize
+    //     Task
+    //         .Delay(50)
+    //         .ContinueWith(_ => { _synchronizationContext?.Post(_ => UpdateWindows(), null); });
+    // }
 
-        try
+    private void AddNewWindow(object? sender, WindowEventArgs e)
+    {
+        Window window = new Window(e.WindowHandle);
+        Guid currentDesktopId = _virtualDesktop.GetCurrentDesktop();
+
+        if (
+            !window.Visible ||
+            window.Floating ||
+            window.Minimized ||
+            !ShouldManageWindow(window, currentDesktopId) ||
+            IsManagedWindow(window.Handle)
+        )
         {
-            // Get all available desktops
-            var desktops = GetAllDesktops();
-            Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
-
-            int currentIndex = Array.IndexOf(desktops, currentDesktop);
-            if (currentIndex == -1) return;
-
-            int newIndex = currentIndex + direction;
-            if (newIndex < 0 || newIndex >= desktops.Length) return;
-
-            Guid targetDesktop = desktops[newIndex];
-            _desktopHelper.MoveWindowToDesktop(hwnd, targetDesktop);
-
-            // Switch to the target desktop
-            SwitchToDesktop(newIndex + 1);
-
-            RefreshWindows();
+            return;
         }
-        catch
-        {
-            // Desktop switching not supported or failed
-        }
+        
+        // Find best fitting zone
+        // Check if new zone is required
+        // Add window to zone
     }
 
-    private Guid[] GetAllDesktops()
+    private void CloseWindow(object? sender, WindowEventArgs e)
     {
-        // This is a simplified approach - we'll track desktops we've seen
-        return _desktopWindows.Keys.ToArray();
     }
 
-    private void SwitchToDesktop(int desktopNumber)
-    {
-        // Simulate Win+Ctrl+Left/Right to switch desktops
-        // This is a workaround since there's no direct API
-    }
-
-    public void SplitHorizontal()
-    {
-        _mode = LayoutMode.Horizontal;
-        TileWindows();
-    }
-
-    public void SplitVertical()
-    {
-        _mode = LayoutMode.Vertical;
-        TileWindows();
-    }
-
-    public void FocusNext()
-    {
-        Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
-        if (!_desktopWindows.ContainsKey(currentDesktop) || _desktopWindows[currentDesktop].Count == 0) return;
-
-        var windows = _desktopWindows[currentDesktop];
-        int idx = windows.IndexOf(_activeWindow);
-        idx = (idx + 1) % windows.Count;
-        SetForegroundWindow(windows[idx]);
-        _activeWindow = windows[idx];
-    }
-
-    public void FocusPrevious()
-    {
-        Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
-        if (!_desktopWindows.ContainsKey(currentDesktop) || _desktopWindows[currentDesktop].Count == 0) return;
-
-        var windows = _desktopWindows[currentDesktop];
-        int idx = windows.IndexOf(_activeWindow);
-        idx = (idx - 1 + windows.Count) % windows.Count;
-        SetForegroundWindow(windows[idx]);
-        _activeWindow = windows[idx];
-    }
-
-    public void CloseActiveWindow()
-    {
-        if (_activeWindow != IntPtr.Zero)
-        {
-            SendMessage(_activeWindow, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-        }
-    }
-
+    /// <summary>
+    /// The update windows function performs a full refresh of the entire manager environment.
+    /// This will clear/reset the <see cref="_zones"/> and <see cref="_windows"/> lists.
+    /// </summary>
     private void UpdateWindows()
     {
-        _desktopWindows.Clear();
-        Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
+        if (!_tilingEnabled)
+        {
+            return;
+        }
 
+        List<Window> windows = GetWindows().OrderBy(w => w.Position.X).ToList();
+        _windows.Clear();
+        _windows.AddRange(windows);
+
+        int newZoneCount = (int)Math.Max(1, Math.Floor(_windows.Count / 2f));
+        int windowsPerZone = _windows.Count / newZoneCount;
+
+        Guid desktopId = _virtualDesktop.GetCurrentDesktop();
+        Screen screen = Screen.FromHandle(_activeWindowHandle);
+        Rectangle workingArea = screen.WorkingArea;
+        Rectangle zoneArea = screen.WorkingArea with
+        {
+            Width = workingArea.Width / newZoneCount
+        };
+
+        _zones.Clear();
+        Window[][] chunks = _windows.Chunk(windowsPerZone).ToArray();
+        for (int iChunk = 0; iChunk < chunks.Count(); iChunk++)
+        {
+            zoneArea.X = iChunk * zoneArea.Width;
+            Zone newZone = new()
+            {
+                DesktopId = desktopId,
+                Area = zoneArea
+            };
+
+            newZone.AddWindowRange(chunks[iChunk]);
+            _zones.Add(newZone);
+        }
+    }
+
+    /// <summary>
+    /// Uses the EnumWindows from user32.dll to get all windows.
+    /// Only open windows and windows on the current desktop are returned.
+    /// </summary>
+    /// <param name="onlyNewWindows">When true, only unmanaged windows will be returned.</param>
+    /// <returns>A list of windows</returns>
+    private List<Window> GetWindows(bool onlyNewWindows = false)
+    {
+        List<Window> newWindows = new();
+
+        Guid currentDesktop = _virtualDesktop.GetCurrentDesktop();
         EnumWindows((hwnd, lParam) =>
         {
-            if (IsWindowVisible(hwnd) && !IsIconic(hwnd))
+            Window window = new(hwnd);
+            if (!window.Visible ||
+                window.Minimized)
             {
-                string title = GetWindowTitle(hwnd);
-                if (!string.IsNullOrEmpty(title) && ShouldManageWindow(hwnd) && !_floatingWindows.Contains(hwnd))
-                {
-                    Guid desktop = _desktopHelper.GetWindowDesktop(hwnd);
-                    if (desktop != Guid.Empty)
-                    {
-                        if (!_desktopWindows.ContainsKey(desktop))
-                        {
-                            _desktopWindows[desktop] = new List<IntPtr>();
-                        }
+                return true;
+            }
 
-                        _desktopWindows[desktop].Add(hwnd);
-                    }
-                }
+            if (
+                !string.IsNullOrEmpty(window.Title) &&
+                ShouldManageWindow(window, currentDesktop) &&
+                (!onlyNewWindows || !IsManagedWindow(hwnd))
+            )
+            {
+                newWindows.Add(window);
             }
 
             return true;
         }, IntPtr.Zero);
 
-        if (_tilingEnabled) TileWindows();
+        return newWindows;
     }
 
-    private string GetWindowTitle(IntPtr hwnd)
+    /// <summary>
+    /// Checks for window handles/titles to ignore and window style
+    /// </summary>
+    private bool ShouldManageWindow(Window window, Guid currentDesktop)
     {
-        int length = GetWindowTextLength(hwnd);
-        if (length == 0) return string.Empty;
-
-        StringBuilder sb = new StringBuilder(length + 1);
-        GetWindowText(hwnd, sb, sb.Capacity);
-        return sb.ToString();
-    }
-
-    private bool ShouldManageWindow(IntPtr hwnd)
-    {
-        string title = GetWindowTitle(hwnd);
         string[] ignore = { "Program Manager", "Windows Input Experience", "Task Switching" };
 
         // Don't manage windows with no title bar or tool windows
-        int style = GetWindowLong(hwnd, GWL_STYLE);
-        int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+        int style = GetWindowLong(window.Handle, GWL_STYLE);
+        int exStyle = GetWindowLong(window.Handle, GWL_EXSTYLE);
+
+        // Only handle windows on this desktop
+        bool onCurrentDesktop = currentDesktop == _virtualDesktop.GetWindowDesktop(window.Handle);
 
         bool hasCaption = (style & WS_CAPTION) == WS_CAPTION;
         bool isToolWindow = (exStyle & WS_EX_TOOLWINDOW) == WS_EX_TOOLWINDOW;
 
-        return !ignore.Any(i => title.Contains(i)) && hasCaption && !isToolWindow;
+        return !ignore.Any(i => window.Title.Contains(i)) && hasCaption && !isToolWindow && onCurrentDesktop;
     }
 
-    private void TileWindows()
+    /// <summary>
+    /// Returns a boolean based on if the window is already present in the window manager
+    /// </summary>
+    private bool IsManagedWindow(IntPtr hwnd)
     {
-        if (!_tilingEnabled) return;
-
-        Guid currentDesktop = _desktopHelper.GetCurrentDesktop();
-        if (!_desktopWindows.ContainsKey(currentDesktop)) return;
-
-        var windows = _desktopWindows[currentDesktop];
-        if (windows.Count == 0) return;
-
-        Screen screen = Screen.PrimaryScreen;
-        Rectangle workArea = screen.WorkingArea;
-
-        int count = windows.Count;
-
-        for (int i = 0; i < count; i++)
-        {
-            Rectangle rect;
-
-            if (_mode == LayoutMode.Horizontal)
-            {
-                int width = workArea.Width / count;
-                rect = new Rectangle(
-                    workArea.X + i * width,
-                    workArea.Y,
-                    width,
-                    workArea.Height
-                );
-            }
-            else
-            {
-                int height = workArea.Height / count;
-                rect = new Rectangle(
-                    workArea.X,
-                    workArea.Y + i * height,
-                    workArea.Width,
-                    height
-                );
-            }
-
-            SetWindowPos(windows[i], IntPtr.Zero,
-                rect.X, rect.Y, rect.Width, rect.Height,
-                SWP_NOZORDER | SWP_NOACTIVATE);
-        }
-    }
-
-    private void RestoreWindows()
-    {
-        // Windows will restore to their previous positions naturally
+        return _windows.Any(w => w.Handle == hwnd);
     }
 
     public void Dispose()
     {
-        _eventHook?.Dispose();
+        _windowEventHook.Dispose();
     }
 }

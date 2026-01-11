@@ -5,7 +5,7 @@ namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveRight : IKeyConsumer
 {
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Right,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );

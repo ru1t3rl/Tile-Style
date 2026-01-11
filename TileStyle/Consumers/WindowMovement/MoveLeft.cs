@@ -5,7 +5,7 @@ namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveLeft : IKeyConsumer
 {
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Left,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );

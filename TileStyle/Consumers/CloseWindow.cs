@@ -7,7 +7,7 @@ public class CloseWindow : IKeyConsumer
 {
     private readonly WindowManager _windowManager;
 
-    public KeyCombination HotKey => new(
+    public HotKey HotKey => new(
         Keys.Q,
         ModifierKeys.Win
     );
@@ -19,7 +19,7 @@ public class CloseWindow : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _windowManager.CloseActiveWindow();
+        // _windowManager.CloseActiveWindow();
         return Task.CompletedTask;
     }
 }

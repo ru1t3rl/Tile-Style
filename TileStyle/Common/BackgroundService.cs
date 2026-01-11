@@ -10,13 +10,13 @@ public abstract class BackgroundService : IHostedService
     private CancellationTokenSource _cancellationTokenSource = new();
 
     protected abstract Task Initialize(CancellationToken cancellationToken);
+    protected abstract Task Dispose(CancellationToken cancellationToken);
 
     protected Task UpdateLoop(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
 
-    protected abstract Task Dispose(CancellationToken cancellationToken);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -59,7 +59,6 @@ public abstract class BackgroundService : IHostedService
         }
         catch (Exception ex)
         {
-            
         }
         finally
         {
