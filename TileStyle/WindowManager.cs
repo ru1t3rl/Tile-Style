@@ -13,9 +13,8 @@ public partial class WindowManager : IDisposable
     private SynchronizationContext? _synchronizationContext;
     private readonly VirtualDesktopHelper _virtualDesktop;
 
-    private readonly List<Window> _windows = new();
-    private readonly List<Zone> _zones = new();
-    public List<Zone> Zones => _zones;
+    public List<Window> Windows { get; init; } = new();
+    public List<Zone> Zones = new();
 
     private bool _tilingEnabled = true;
 
@@ -49,28 +48,7 @@ public partial class WindowManager : IDisposable
         }
     }
 
-    public void ToggleActiveFloating()
-    {
-        Window? window = _windows.SingleOrDefault(w => w.Handle == ActiveWindowHandle);
-        if (window is null)
-        {
-            _logger.LogWarning("Window {WindowHandle} was not found", ActiveWindowHandle);
-            return;
-        }
-
-        if (window.Floating)
-        {
-            _windows.Remove(window);
-            AddNewWindow(this, new WindowEventArgs(window.Handle));
-            return;
-        }
-
-        Zone zone = _zones.Single(z => z.Windows.Any(w => w.Handle == window.Handle));
-        zone.RemoveWindow(window.Handle);
-        window.Floating = !window.Floating;
-    }
-
-    private void AddNewWindow(object? sender, WindowEventArgs e)
+    public void AddNewWindow(object? sender, WindowEventArgs e)
     {
         Window window = new Window(e.WindowHandle);
         Guid currentDesktopId = _virtualDesktop.GetCurrentDesktop();
@@ -86,9 +64,9 @@ public partial class WindowManager : IDisposable
             return;
         }
 
-        int bestDistance = CalculateDistance(_zones[0], window);
-        Zone bestZone = _zones[0];
-        foreach (Zone zone in _zones)
+        int bestDistance = CalculateDistance(Zones[0], window);
+        Zone bestZone = Zones[0];
+        foreach (Zone zone in Zones)
         {
             int distance = CalculateDistance(zone, window);
             if (distance < bestDistance)
@@ -98,22 +76,22 @@ public partial class WindowManager : IDisposable
             }
         }
 
-        _windows.Add(window);
-        bestZone.AddWindow(_windows[^1]);
+        Windows.Add(window);
+        bestZone.AddWindow(Windows[^1]);
     }
 
     private void CloseWindow(object? sender, WindowEventArgs e)
     {
-        Window? window = _windows.SingleOrDefault(w => w.Handle == e.WindowHandle);
+        Window? window = Windows.SingleOrDefault(w => w.Handle == e.WindowHandle);
         if (window is null)
         {
             _logger.LogWarning("Window {WindowHandle} was not found", e.WindowHandle);
             return;
         }
 
-        _windows.Remove(window);
+        Windows.Remove(window);
 
-        foreach (Zone zone in _zones)
+        foreach (Zone zone in Zones)
         {
             if (zone.Windows.All(w => w.Handle != e.WindowHandle))
             {
@@ -141,7 +119,7 @@ public partial class WindowManager : IDisposable
 
     /// <summary>
     /// The update windows function performs a full refresh of the entire manager environment.
-    /// This will clear/reset the <see cref="_zones"/> and <see cref="_windows"/> lists.
+    /// This will clear/reset the <see cref="Zones"/> and <see cref="Windows"/> lists.
     /// </summary>
     private void UpdateWindows()
     {
@@ -151,11 +129,11 @@ public partial class WindowManager : IDisposable
         }
 
         List<Window> windows = GetWindows().OrderBy(w => w.Position.X).ToList();
-        _windows.Clear();
-        _windows.AddRange(windows);
+        Windows.Clear();
+        Windows.AddRange(windows);
 
-        int newZoneCount = (int)Math.Max(1, Math.Ceiling((_windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
-        int windowsPerZone = (int)Math.Ceiling(_windows.Count / (float)newZoneCount);
+        int newZoneCount = (int)Math.Max(1, Math.Ceiling((Windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
+        int windowsPerZone = (int)Math.Ceiling(Windows.Count / (float)newZoneCount);
 
         Guid desktopId = _virtualDesktop.GetCurrentDesktop();
         Screen screen = Screen.FromHandle(ActiveWindowHandle);
@@ -165,8 +143,8 @@ public partial class WindowManager : IDisposable
             Width = workingArea.Width / newZoneCount
         };
 
-        _zones.Clear();
-        Window[][] chunks = _windows.Chunk(windowsPerZone).ToArray();
+        Zones.Clear();
+        Window[][] chunks = Windows.Chunk(windowsPerZone).ToArray();
         for (int iChunk = 0; iChunk < chunks.Count(); iChunk++)
         {
             zoneArea.X = iChunk * zoneArea.Width;
@@ -177,7 +155,7 @@ public partial class WindowManager : IDisposable
             };
 
             newZone.AddWindowRange(chunks[iChunk]);
-            _zones.Add(newZone);
+            Zones.Add(newZone);
         }
     }
 
@@ -190,7 +168,7 @@ public partial class WindowManager : IDisposable
     private List<Window> GetWindows(bool onlyNewWindows = false)
     {
         List<IntPtr> newWindowHandles = new();
-        IntPtr[] existingWindows = _windows.Select(window => window.Handle).ToArray();
+        IntPtr[] existingWindows = Windows.Select(window => window.Handle).ToArray();
 
         Guid currentDesktop = _virtualDesktop.GetCurrentDesktop();
         EnumWindows((hwnd, lParam_) =>
@@ -241,7 +219,7 @@ public partial class WindowManager : IDisposable
     /// </summary>
     private bool IsManagedWindow(IntPtr hwnd)
     {
-        return _windows.Any(w => w.Handle == hwnd);
+        return Windows.Any(w => w.Handle == hwnd);
     }
 
     public void Dispose()
