@@ -101,6 +101,7 @@ public partial class WindowEventHook : IDisposable
         for (int iHook = 0; iHook < _hookHandles.Length; iHook++)
         {
             UnhookWinEvent(_hookHandles[iHook]);
+            _logger.LogDebug("Unhooked WinEvent Hook. ({_hookHandles[iHook]})", _hookHandles[iHook]);
             _hookHandles[iHook] = IntPtr.Zero;
         }
     }
