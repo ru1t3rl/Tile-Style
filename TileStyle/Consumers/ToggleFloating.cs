@@ -12,7 +12,7 @@ public class ToggleFloating : IKeyConsumer
 
     public HotKey HotKey => new(
         Keys.F,
-        ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
+        ModifierKeys.Win
     );
 
     public ToggleFloating(WindowManager windowManager, ILogger<ToggleFloating> logger)

@@ -11,7 +11,7 @@ public class SplitHorizontal : IKeyConsumer
 
     public HotKey HotKey => new(
         Keys.H,
-        ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
+        ModifierKeys.Win
     );
 
     public SplitHorizontal(WindowManager windowManager, ILogger<SplitHorizontal> logger)
