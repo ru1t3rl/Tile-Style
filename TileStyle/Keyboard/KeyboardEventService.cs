@@ -8,12 +8,12 @@ namespace TileStyle.Keyboard;
 public class KeyboardEventService : BackgroundService
 {
     private readonly FrozenDictionary<HotKey, IKeyConsumer[]> _keyConsumers;
-    private readonly KeyboardHook _keyboardHook;
+    private readonly IKeyboardHook _keyboardHook;
     private readonly List<int> _keyboardHookIds = new();
 
     private Thread? _messageLoopThread;
 
-    public KeyboardEventService(IEnumerable<IKeyConsumer> keyConsumers, KeyboardHook keyboardHook)
+    public KeyboardEventService(IEnumerable<IKeyConsumer> keyConsumers, IKeyboardHook keyboardHook)
     {
         _keyboardHook = keyboardHook;
         _keyConsumers = keyConsumers

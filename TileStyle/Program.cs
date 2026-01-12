@@ -24,7 +24,7 @@ static class Program
         WindowManagerContext context = host.Services.GetRequiredService<WindowManagerContext>();
         WindowManager windowManager = host.Services.GetRequiredService<WindowManager>();
         windowManager.InitializeContext();
-        
+
         Application.Run(context);
 
         host.StopAsync().Wait();
@@ -35,7 +35,7 @@ static class Program
         services.AddSingleton<WindowManagerContext>();
         services.AddSingleton<WindowManager>();
         services.AddSingleton<WindowEventHook>();
-        
+
         services.AddSingleton<VirtualDesktopHelper>();
         services.AddSingleton<HiddenWindow>();
 
@@ -52,7 +52,6 @@ static class Program
         });
 
         services.AddHostedService<KeyboardEventService>();
-
-        services.AddScoped<KeyboardHook>();
+        services.AddScoped<IKeyboardHook, LowLevelKeyboardHook>();
     }
 }

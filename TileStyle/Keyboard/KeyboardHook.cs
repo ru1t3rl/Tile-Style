@@ -4,7 +4,7 @@ using TileStyle.Windows;
 
 namespace TileStyle.Keyboard;
 
-public partial class KeyboardHook : IDisposable
+public partial class KeyboardHook : IKeyboardHook
 {
     private readonly ILogger<KeyboardHook> _logger;
     private readonly HiddenWindow _window;
