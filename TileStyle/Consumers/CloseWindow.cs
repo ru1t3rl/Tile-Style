@@ -1,5 +1,6 @@
 ﻿using TileStyle.Keyboard;
 using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Consumers;
 
@@ -19,7 +20,8 @@ public class CloseWindow : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        // _windowManager.CloseActiveWindow();
+        WindowEventArgs eventArgs = new(_windowManager.ActiveWindowHandle);
+        _windowManager.CloseWindow(sender, eventArgs);
         return Task.CompletedTask;
     }
 }
