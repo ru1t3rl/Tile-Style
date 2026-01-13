@@ -71,7 +71,7 @@ public partial class WindowManager : IDisposable
             UpdateWindows();
             return;
         }
-        
+
         foreach (Zone zone in Zones)
         {
             int distance = CalculateDistance(zone, window);
@@ -86,12 +86,11 @@ public partial class WindowManager : IDisposable
         bestZone.AddWindow(Windows[^1]);
     }
 
-    private void CloseWindow(object? sender, WindowEventArgs e)
+    public void CloseWindow(object? sender, WindowEventArgs e)
     {
         Window? window = Windows.SingleOrDefault(w => w.Handle == e.WindowHandle);
         if (window is null)
         {
-            _logger.LogWarning("Window {WindowHandle} was not found", e.WindowHandle);
             return;
         }
 
@@ -193,10 +192,11 @@ public partial class WindowManager : IDisposable
                              !window.Minimized &&
                              !string.IsNullOrEmpty(window.Title) &&
                              ShouldManageWindow(window, currentDesktop) &&
-                             !IsManagedWindow(window.Handle))
+                             (!onlyNewWindows || !IsManagedWindow(window.Handle)))
             .ToList();
 
-        _logger.LogInformation("GetWindows found {Count} windows", newWindowHandles.Count);
+        _logger.LogInformation("Found a total of {Count} windows. There are {usable} windows which should be managed.", newWindowHandles.Count, newWindows.Count);
+
         return newWindows;
     }
 
