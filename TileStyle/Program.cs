@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using TileStyle.Common;
 using TileStyle.Consumers;
 using TileStyle.Keyboard;
 using TileStyle.Windows;
@@ -36,6 +37,7 @@ static class Program
         services.AddSingleton<WindowManager>();
         services.AddSingleton<WindowEventHook>();
 
+        services.AddSingleton<ServiceInstaller>();
         services.AddSingleton<VirtualDesktopHelper>();
         services.AddSingleton<HiddenWindow>();
 
