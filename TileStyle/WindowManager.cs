@@ -6,7 +6,7 @@ namespace TileStyle;
 
 public partial class WindowManager : IDisposable
 {
-    public const int MAX_WINDOWS_PER_ZONE = 3;
+    public const int MAX_WINDOWS_PER_ZONE = 2;
 
     private readonly ILogger<WindowManager> _logger;
     private readonly WindowEventHook _windowEventHook;
@@ -66,6 +66,12 @@ public partial class WindowManager : IDisposable
 
         int bestDistance = CalculateDistance(Zones[0], window);
         Zone bestZone = Zones[0];
+        if (bestZone.Windows.Count >= MAX_WINDOWS_PER_ZONE)
+        {
+            UpdateWindows();
+            return;
+        }
+        
         foreach (Zone zone in Zones)
         {
             int distance = CalculateDistance(zone, window);

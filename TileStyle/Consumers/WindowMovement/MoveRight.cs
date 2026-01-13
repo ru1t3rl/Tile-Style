@@ -6,14 +6,14 @@ namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveRight : MoveBase
 {
-    public MoveRight(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
-    {
-    }
-
     public override HotKey HotKey => new HotKey(
         Keys.Right,
         ModifierKeys.Win | ModifierKeys.Control | ModifierKeys.Shift
     );
 
     protected override MoveDirection MoveDirection => MoveDirection.Right;
+    
+    public MoveRight(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
+    {
+    }
 }

@@ -7,7 +7,7 @@ namespace TileStyle.Consumers.WindowMovement;
 public abstract class MoveBase : IKeyConsumer
 {
     private readonly ILogger<MoveBase> _logger;
-    private readonly WindowManager _windowManager;
+    protected readonly WindowManager _windowManager;
 
     public MoveBase(WindowManager windowManager, ILogger<MoveBase> logger)
     {
@@ -34,12 +34,37 @@ public abstract class MoveBase : IKeyConsumer
         );
 
         Zone activeZone = _windowManager.Zones[zoneIndex];
-        if (!activeZone.TryMove(activeWindow, MoveDirection))
+        if (!activeZone.TryMove(activeWindow, MoveDirection) && !TryChangeZone(activeWindow, activeZone))
         {
             _logger.LogError("Window move failed.");
-            // TODO: Move to next zone   
         }
 
         return Task.CompletedTask;
+    }
+
+    private bool TryChangeZone(Window window, Zone zone)
+    {
+        Zone? nextZone = null;
+        int zoneIndex = _windowManager.Zones.IndexOf(zone);
+        if ((MoveDirection == MoveDirection.Right || MoveDirection == MoveDirection.Down) &&
+            zoneIndex < _windowManager.Zones.Count - 1)
+        {
+            nextZone = _windowManager.Zones[zoneIndex + 1];
+        }
+
+        if ((MoveDirection == MoveDirection.Left || MoveDirection == MoveDirection.Up) && zoneIndex > 0)
+        {
+            nextZone = _windowManager.Zones[zoneIndex - 1];
+        }
+
+        if (nextZone is null)
+        {
+            return false;
+        }
+
+        zone.RemoveWindow(window.Handle);
+        nextZone.AddWindow(window);
+
+        return true;
     }
 }
