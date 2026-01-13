@@ -6,6 +6,9 @@
         <Nullable>enable</Nullable>
         <UseWindowsForms>true</UseWindowsForms>
         <ImplicitUsings>enable</ImplicitUsings>
+        <ApplicationIcon>tile_style.ico</ApplicationIcon>
+        <Company>Tile Style</Company>
+        <Product>Tile Style</Product>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,6 +19,12 @@
       <PackageReference Include="Scrutor" Version="7.0.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="tile_style.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

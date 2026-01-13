@@ -19,7 +19,7 @@ public class WindowManagerContext : ApplicationContext
 
         _trayIcon = new NotifyIcon()
         {
-            Icon = SystemIcons.Application,
+            Icon = new Icon("tile_style.ico"),
             ContextMenuStrip = new ContextMenuStrip(),
             Visible = true,
             Text = "Tiling Window Manager"
