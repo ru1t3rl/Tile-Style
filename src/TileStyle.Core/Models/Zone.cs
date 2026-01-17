@@ -30,7 +30,7 @@ public class Zone
 
     private void UpdateHorizontally(Window[] windows)
     {
-        int windowWidth = Area.Width / windows.Length;
+        int windowWidth = windows.Length == 0 ? 0 : Area.Width / windows.Length;
         int windowHeight = Area.Height;
 
         for (int iWindow = 0; iWindow < windows.Length; iWindow++)
