@@ -4,7 +4,6 @@ branches:
     mode: ContinuousDeployment
     label: beta
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
     track-merge-target: true
     regex: ^dev(elop)?(ment)?$
     source-branches: []
@@ -12,7 +11,6 @@ branches:
     mode: ContinuousDelivery
     label: ''
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     regex: ^master$|^main$
     source-branches:
