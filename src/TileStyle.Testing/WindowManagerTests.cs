@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using TileStyle.Models;
@@ -122,8 +123,7 @@ public class WindowManagerTests
     private static Window CreateMockWindow(IntPtr handle)
     {
         var windowType = typeof(Window);
-        var window = (Window)System.Runtime.Serialization.FormatterServices
-            .GetUninitializedObject(windowType);
+        var window = (Window)RuntimeHelpers.GetUninitializedObject(windowType);
 
         var handleField = windowType.GetField("<Handle>k__BackingField",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
