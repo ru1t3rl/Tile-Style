@@ -2,7 +2,7 @@
 branches:
   develop:
     mode: ContinuousDeployment
-    tag: beta
+    label: beta
     increment: Minor
     prevent-increment-of-merged-branch-version: false
     track-merge-target: true
@@ -10,7 +10,7 @@ branches:
     source-branches: []
   main:
     mode: ContinuousDelivery
-    tag: ''
+    label: ''
     increment: Patch
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
@@ -19,14 +19,14 @@ branches:
       - develop
   feature:
     mode: ContinuousDeployment
-    tag: alpha.{BranchName}
+    label: alpha.{BranchName}
     increment: Minor
     regex: ^features?[/-]
     source-branches:
       - develop
   hotfix:
     mode: ContinuousDeployment
-    tag: hotfix.{BranchName}
+    label: hotfix.{BranchName}
     increment: Patch
     regex: ^hotfix(es)?[/-]
     source-branches:
