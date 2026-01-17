@@ -79,6 +79,10 @@ jobs:
   release:
     needs: build-and-test
     runs-on: windows-latest
+    if: |
+      (contains(github.event.commits.*.added, 'TileStyle/') || 
+      contains(github.event.commits.*.modified, 'TileStyle/') || 
+      contains(github.event.commits.*.removed, 'TileStyle/'))
     
     steps:
       - name: Checkout code
