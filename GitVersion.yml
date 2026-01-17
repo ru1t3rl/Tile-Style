@@ -24,6 +24,14 @@ branches:
     regex: ^features?[/-]
     source-branches:
       - develop
+  hotfix:
+    mode: ContinuousDeployment
+    tag: hotfix.{BranchName}
+    increment: Patch
+    regex: ^hotfix(es)?[/-]
+    source-branches:
+      - develop
+      - main
 ignore:
   sha: []
 merge-message-formats: {}
