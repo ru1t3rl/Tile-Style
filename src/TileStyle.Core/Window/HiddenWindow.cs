@@ -6,7 +6,7 @@ public class HiddenWindow : NativeWindow, IDisposable
 {
     private const int WM_HOTKEY = 0x0312;
     
-    public event EventHandler<HotKeyEventArgs> HotKeyPressed;
+    public event EventHandler<HotKeyEventArgs>? HotKeyPressed;
 
     public HiddenWindow()
     {

@@ -17,7 +17,7 @@ on:
         default: false
 
 jobs:
-  build-and-test:
+  build:
     runs-on: windows-latest
     
     steps:
@@ -36,11 +36,10 @@ jobs:
         id: gitversion
         uses: gittools/actions/gitversion/execute@v4
         with:
-          useConfigFile: true
           configFilePath: GitVersion.yml
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -50,23 +49,14 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore /p:Version=${{ steps.gitversion.outputs.semVer }}
 
-      - name: Run tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
-
-      - name: Publish application
-        run: dotnet publish TileStyle/TileStyle.csproj --configuration Release --output ./publish --no-build /p:Version=${{ steps.gitversion.outputs.semVer }}
-
-      - name: Create ZIP archive
-        run: |
-          Compress-Archive -Path ./publish/* -DestinationPath TileStyle-${{ steps.gitversion.outputs.semVer }}.zip
-        shell: pwsh
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload build output
+        uses: actions/upload-artifact@v6
         with:
-          name: TileStyle-${{ steps.gitversion.outputs.semVer }}
-          path: TileStyle-${{ steps.gitversion.outputs.semVer }}.zip
-          retention-days: 7
+          name: build-output
+          path: |
+            **/bin/Release/**
+            **/obj/Release/**
+          retention-days: 1
 
       - name: Set version output
         id: version
@@ -76,13 +66,65 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.semver }}
 
+  test:
+    needs: build
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+  publish:
+    needs: [build, test]
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Publish application
+        run: dotnet publish src/TileStyle.Core/TileStyle.Core.csproj --configuration Release --output ./publish /p:Version=${{ needs.build.outputs.version }}
+
+      - name: Create ZIP archive
+        run: |
+          Compress-Archive -Path ./publish/* -DestinationPath TileStyle-${{ needs.build.outputs.version }}.zip
+        shell: pwsh
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: TileStyle-${{ needs.build.outputs.version }}
+          path: TileStyle-${{ needs.build.outputs.version }}.zip
+          retention-days: 7
+
   release:
-    needs: build-and-test
+    needs: [build, publish]
     runs-on: windows-latest
     if: |
-      (contains(github.event.commits.*.added, 'TileStyle/') || 
-      contains(github.event.commits.*.modified, 'TileStyle/') || 
-      contains(github.event.commits.*.removed, 'TileStyle/'))
+      (contains(github.event.commits.*.added, 'src/') || 
+      contains(github.event.commits.*.modified, 'src/') || 
+      contains(github.event.commits.*.removed, 'src/'))
     
     steps:
       - name: Checkout code
@@ -93,7 +135,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: TileStyle-${{ needs.build-and-test.outputs.version }}
+          name: TileStyle-${{ needs.build.outputs.version }}
 
       - name: Generate changelog
         id: changelog
@@ -114,10 +156,10 @@ jobs:
       - name: Create Pre-release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.build-and-test.outputs.version }}
-          name: Preview v${{ needs.build-and-test.outputs.version }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Preview v${{ needs.build.outputs.version }}
           body: |
-            ## 🚀 Preview Release v${{ needs.build-and-test.outputs.version }}
+            ## 🚀 Preview Release v${{ needs.build.outputs.version }}
             
             This is an automated pre-release build from the `develop` branch.
             
@@ -127,7 +169,7 @@ jobs:
             **Build Information:**
             - Commit: ${{ github.sha }}
             - Branch: ${{ github.ref_name }}
-          files: TileStyle-${{ needs.build-and-test.outputs.version }}.zip
+          files: TileStyle-${{ needs.build.outputs.version }}.zip
           prerelease: true
           draft: false
         env:

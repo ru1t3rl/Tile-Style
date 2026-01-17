@@ -32,15 +32,15 @@ public class WindowManagerContext : ApplicationContext
     {
         if (_serviceInstaller.IsInstalled(AppName))
         {
-            _trayIcon.ContextMenuStrip.Items.Add("Remove from startup").Click += (_, __) => UninstallFromStartup();
+            _trayIcon.ContextMenuStrip?.Items.Add("Remove from startup").Click += (_, _) => UninstallFromStartup();
         }
         else
         {
-            _trayIcon.ContextMenuStrip.Items.Add("Add to startup").Click += (_, __) => InstallAppInStartup();
+            _trayIcon.ContextMenuStrip?.Items.Add("Add to startup").Click += (_, _) => InstallAppInStartup();
         }
 
-        _trayIcon.ContextMenuStrip.Items.Add("Toggle Tiling", null, (_, _) => _windowManager.ToggleTiling());
-        _trayIcon.ContextMenuStrip.Items.Add("Exit", null, (_, _) => Exit());
+        _trayIcon.ContextMenuStrip?.Items.Add("Toggle Tiling", null, (_, _) => _windowManager.ToggleTiling());
+        _trayIcon.ContextMenuStrip?.Items.Add("Exit", null, (_, _) => Exit());
     }
     
     private void InstallAppInStartup()
@@ -50,7 +50,7 @@ public class WindowManagerContext : ApplicationContext
             Application.ExecutablePath
         );
         
-        _trayIcon.ContextMenuStrip.Items.Clear();
+        _trayIcon.ContextMenuStrip?.Items.Clear();
         BuildContextMenu();
     }
 
@@ -58,7 +58,7 @@ public class WindowManagerContext : ApplicationContext
     {
         _serviceInstaller.Uninstall(AppName);
         
-        _trayIcon.ContextMenuStrip.Items.Clear();
+        _trayIcon.ContextMenuStrip?.Items.Clear();
         BuildContextMenu();
     }
 

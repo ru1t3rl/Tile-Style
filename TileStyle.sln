@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileStyle", "TileStyle\TileStyle.csproj", "{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "src\TileStyle.Core", "src\TileStyle.Core\TileStyle.Core.csproj", "{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileStyle.Testing", "src\TileStyle.Testing\TileStyle.Testing.csproj", "{B5B78D59-E6BA-4A19-9B78-89D9543A93AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +14,9 @@ Global
 		{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5B78D59-E6BA-4A19-9B78-89D9543A93AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5B78D59-E6BA-4A19-9B78-89D9543A93AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5B78D59-E6BA-4A19-9B78-89D9543A93AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5B78D59-E6BA-4A19-9B78-89D9543A93AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

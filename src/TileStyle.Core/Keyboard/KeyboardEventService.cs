@@ -11,8 +11,6 @@ public class KeyboardEventService : BackgroundService
     private readonly IKeyboardHook _keyboardHook;
     private readonly List<int> _keyboardHookIds = new();
 
-    private Thread? _messageLoopThread;
-
     public KeyboardEventService(IEnumerable<IKeyConsumer> keyConsumers, IKeyboardHook keyboardHook)
     {
         _keyboardHook = keyboardHook;

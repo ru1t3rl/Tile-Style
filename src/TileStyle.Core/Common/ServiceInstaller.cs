@@ -30,7 +30,7 @@ public class ServiceInstaller
     /// <exception cref="InvalidOperationException">If the user isnt allowed to remove the key, an invalid operation exception is thrown.</exception>
     public void Uninstall(string appName)
     {
-        using RegistryKey runRegistryKey = Registry.CurrentUser.OpenSubKey(RUN_REGISTRY_PATH, true);
+        using RegistryKey? runRegistryKey = Registry.CurrentUser.OpenSubKey(RUN_REGISTRY_PATH, true);
         if (runRegistryKey is null)
         {
             return;
