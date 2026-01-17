@@ -80,9 +80,9 @@ jobs:
     needs: build-and-test
     runs-on: windows-latest
     if: |
-      (contains(github.event.commits.*.added, 'TileStyle/') || 
-      contains(github.event.commits.*.modified, 'TileStyle/') || 
-      contains(github.event.commits.*.removed, 'TileStyle/'))
+      (contains(github.event.commits.*.added, 'src/') || 
+      contains(github.event.commits.*.modified, 'src/') || 
+      contains(github.event.commits.*.removed, 'src/'))
     
     steps:
       - name: Checkout code

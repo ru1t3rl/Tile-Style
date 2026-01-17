@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileStyle", "TileStyle\TileStyle.csproj", "{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "src\TileStyle.Core", "src\TileStyle.Core\TileStyle.Core.csproj", "{3BF2C3C4-E9FB-4C44-9D28-44D345B8732D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

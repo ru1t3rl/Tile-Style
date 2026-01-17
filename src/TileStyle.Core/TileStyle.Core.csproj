@@ -9,6 +9,7 @@
         <ApplicationIcon>tile_style.ico</ApplicationIcon>
         <Company>Tile Style</Company>
         <Product>Tile Style</Product>
+        <RootNamespace>TileStyle</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
