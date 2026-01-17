@@ -1,0 +1,35 @@
+﻿mode: ContinuousDeployment
+branches:
+  develop:
+    mode: ContinuousDeployment
+    label: beta
+    increment: Minor
+    track-merge-target: true
+    regex: ^dev(elop)?(ment)?$
+    source-branches: []
+  main:
+    mode: ContinuousDelivery
+    label: ''
+    increment: Patch
+    track-merge-target: false
+    regex: ^master$|^main$
+    source-branches:
+      - develop
+  feature:
+    mode: ContinuousDeployment
+    label: alpha.{BranchName}
+    increment: Minor
+    regex: ^features?[/-]
+    source-branches:
+      - develop
+  hotfix:
+    mode: ContinuousDeployment
+    label: hotfix.{BranchName}
+    increment: Patch
+    regex: ^hotfix(es)?[/-]
+    source-branches:
+      - develop
+      - main
+ignore:
+  sha: []
+merge-message-formats: {}

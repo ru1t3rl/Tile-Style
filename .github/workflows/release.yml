@@ -1,0 +1,134 @@
+﻿name: Release Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a pre-release'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for GitVersion
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: '6.5.x'
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore /p:Version=${{ steps.gitversion.outputs.semVer }}
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Publish application
+        run: dotnet publish TileStyle/TileStyle.csproj --configuration Release --output ./publish --no-build /p:Version=${{ steps.gitversion.outputs.semVer }}
+
+      - name: Create ZIP archive
+        run: |
+          Compress-Archive -Path ./publish/* -DestinationPath TileStyle-${{ steps.gitversion.outputs.semVer }}.zip
+        shell: pwsh
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TileStyle-${{ steps.gitversion.outputs.semVer }}
+          path: TileStyle-${{ steps.gitversion.outputs.semVer }}.zip
+          retention-days: 7
+
+      - name: Set version output
+        id: version
+        run: echo "semver=${{ steps.gitversion.outputs.semVer }}" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+    
+    outputs:
+      version: ${{ steps.version.outputs.semver }}
+
+  release:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: |
+      (contains(github.event.commits.*.added, 'TileStyle/') || 
+      contains(github.event.commits.*.modified, 'TileStyle/') || 
+      contains(github.event.commits.*.removed, 'TileStyle/'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TileStyle-${{ needs.build-and-test.outputs.version }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          $lastTag = git describe --tags --abbrev=0 2>$null
+          if ($lastTag) {
+            $changelog = git log --pretty=format:"- %s (%h)" "$lastTag..HEAD"
+          } else {
+            $changelog = git log --pretty=format:"- %s (%h)" -n 20
+          }
+          if ([string]::IsNullOrWhiteSpace($changelog)) {
+            $changelog = "- Initial release"
+          }
+          $changelog = $changelog -replace "`r`n", "%0A" -replace "`n", "%0A"
+          echo "CHANGELOG=$changelog" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build-and-test.outputs.version }}
+          name: Preview v${{ needs.build-and-test.outputs.version }}
+          body: |
+            ## 🚀 Preview Release v${{ needs.build-and-test.outputs.version }}
+            
+            This is an automated pre-release build from the `develop` branch.
+            
+            ### Changes
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            **Build Information:**
+            - Commit: ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}
+          files: TileStyle-${{ needs.build-and-test.outputs.version }}.zip
+          prerelease: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
