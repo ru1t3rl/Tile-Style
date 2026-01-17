@@ -100,13 +100,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+          run: dotnet restore
 
       - name: Publish application
-        run: dotnet publish src/TileStyle.Core/TileStyle.Core.csproj --configuration Release --output ./publish --no-build /p:Version=${{ needs.build.outputs.version }}
+        run: dotnet publish src/TileStyle.Core/TileStyle.Core.csproj --configuration Release --output ./publish /p:Version=${{ needs.build.outputs.version }}
 
       - name: Create ZIP archive
         run: |
