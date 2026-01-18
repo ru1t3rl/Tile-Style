@@ -32,7 +32,8 @@ public class ToggleFloating : IKeyConsumer
 
         if (window.Floating)
         {
-            _windowManager.Windows.Remove(window);
+            Screen screen = Screen.FromHandle(window.Handle);
+            _windowManager.ScreenGroupedWindows[screen].Remove(window);
             _windowManager.AddNewWindow(this, new WindowEventArgs(window.Handle));
             return Task.CompletedTask;
         }

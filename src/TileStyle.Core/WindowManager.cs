@@ -14,7 +14,8 @@ public partial class WindowManager : IDisposable
     private readonly VirtualDesktopHelper _virtualDesktop;
     private readonly WindowStyleChanger _styleChanger;
 
-    public List<Window> Windows { get; init; } = new();
+    public Dictionary<Screen, List<Window>> ScreenGroupedWindows { get; } = new();
+    public List<Window> Windows => ScreenGroupedWindows.SelectMany(w => w.Value).ToList();
     public List<Zone> Zones = new();
 
     private bool _tilingEnabled = true;
@@ -89,8 +90,9 @@ public partial class WindowManager : IDisposable
 
         UpdateWindowStyle(window.Handle);
 
-        Windows.Add(window);
-        bestZone.AddWindow(Windows[^1]);
+        Screen screen = Screen.FromHandle(window.Handle);
+        ScreenGroupedWindows[screen].Add(window);
+        bestZone.AddWindow(ScreenGroupedWindows[screen][^1]);
     }
 
     public void CloseWindow(object? sender, WindowEventArgs e)
@@ -101,7 +103,8 @@ public partial class WindowManager : IDisposable
             return;
         }
 
-        Windows.Remove(window);
+        Screen screen = Screen.FromHandle(window.Handle);
+        ScreenGroupedWindows[screen].Remove(window);
 
         foreach (Zone zone in Zones)
         {
@@ -131,7 +134,7 @@ public partial class WindowManager : IDisposable
 
     /// <summary>
     /// The update windows function performs a full refresh of the entire manager environment.
-    /// This will clear/reset the <see cref="Zones"/> and <see cref="Windows"/> lists.
+    /// This will clear/reset the <see cref="Zones"/> and <see cref="ScreenGroupedWindows"/> lists.
     /// </summary>
     private void UpdateWindows()
     {
@@ -140,39 +143,59 @@ public partial class WindowManager : IDisposable
             return;
         }
 
-        List<Window> windows = GetWindows().OrderBy(w => w.Position.X).ToList();
-        Windows.Clear();
-        Windows.AddRange(windows);
+        Dictionary<Screen, List<Window>> windows = GetWindows()
+            .Select(window =>
+            {
+                Screen screen = Screen.FromHandle(window.Handle);
+                return (screen, window);
+            })
+            .GroupBy(w => w.screen)
+            .ToDictionary(
+                grouping => grouping.Key,
+                grouping => grouping
+                    .Select(group => group.window)
+                    .OrderBy(w => w.Position.X)
+                    .ToList()
+            );
+
+        ScreenGroupedWindows.Clear();
 
         if (windows.Count == 0)
         {
             return;
         }
 
-        int newZoneCount = (int)Math.Max(1, Math.Ceiling((Windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
-        int windowsPerZone = (int)Math.Ceiling(Windows.Count / (float)newZoneCount);
 
-        Guid desktopId = _virtualDesktop.GetCurrentDesktop();
-        Screen screen = Screen.FromHandle(ActiveWindowHandle);
-        Rectangle workingArea = screen.WorkingArea;
-        Rectangle zoneArea = screen.WorkingArea with
+        foreach (Screen screen in windows.Keys)
         {
-            Width = workingArea.Width / newZoneCount
-        };
+            List<Window> currentWindows = windows[screen];
+            ScreenGroupedWindows.Add(screen, windows[screen]);
 
-        Zones.Clear();
-        Window[][] chunks = Windows.Chunk(windowsPerZone).ToArray();
-        for (int iChunk = 0; iChunk < chunks.Count(); iChunk++)
-        {
-            zoneArea.X = iChunk * zoneArea.Width;
-            Zone newZone = new()
+            int newZoneCount = (int)Math.Max(1, Math.Ceiling((currentWindows.Count / (float)MAX_WINDOWS_PER_ZONE)));
+            int windowsPerZone = (int)Math.Ceiling(currentWindows.Count / (float)newZoneCount);
+
+            Guid desktopId = _virtualDesktop.GetCurrentDesktop();
+
+            Rectangle workingArea = screen.WorkingArea;
+            Rectangle zoneArea = screen.WorkingArea with
             {
-                DesktopId = desktopId,
-                Area = zoneArea
+                Width = workingArea.Width / newZoneCount
             };
 
-            newZone.AddWindowRange(chunks[iChunk]);
-            Zones.Add(newZone);
+            Zones.Clear();
+            Window[][] chunks = currentWindows.Chunk(windowsPerZone).ToArray();
+            for (int iChunk = 0; iChunk < chunks.Count(); iChunk++)
+            {
+                zoneArea.X = iChunk * zoneArea.Width;
+                Zone newZone = new()
+                {
+                    DesktopId = desktopId,
+                    Area = zoneArea
+                };
+
+                newZone.AddWindowRange(chunks[iChunk]);
+                Zones.Add(newZone);
+            }
         }
     }
 

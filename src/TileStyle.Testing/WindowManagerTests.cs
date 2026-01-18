@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using TileStyle.Models;
@@ -36,7 +37,7 @@ public class WindowManagerTests
     [Test]
     public void Constructor_InitializesWindowsListAsEmpty()
     {
-        Assert.That(_windowManager.Windows, Is.Empty);
+        Assert.That(_windowManager.ScreenGroupedWindows, Is.Empty);
     }
 
     [Test]
@@ -59,12 +60,13 @@ public class WindowManagerTests
     {
         var testHandle = new IntPtr(12345);
         var testWindow = CreateMockWindow(testHandle);
-        _windowManager.Windows.Add(testWindow);
+        Screen screen = Screen.FromHandle(testWindow.Handle);
+        _windowManager.ScreenGroupedWindows.Add(screen, [testWindow]);
 
         var args = new WindowEventArgs(testHandle);
         _windowManager.CloseWindow(null, args);
 
-        Assert.That(_windowManager.Windows, Does.Not.Contain(testWindow));
+        Assert.That(_windowManager.ScreenGroupedWindows[screen], Does.Not.Contain(testWindow));
     }
 
     [Test]
@@ -88,7 +90,8 @@ public class WindowManagerTests
             Area = new Rectangle { X = 0, Y = 0, Width = 100, Height = 100 }
         };
 
-        _windowManager.Windows.Add(testWindow);
+        Screen screen = Screen.FromHandle(testWindow.Handle);
+        _windowManager.ScreenGroupedWindows.Add(screen, [testWindow]);
         _windowManager.Zones.Add(zone);
         zone.AddWindow(testWindow);
 
