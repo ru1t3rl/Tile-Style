@@ -135,6 +135,11 @@ public partial class WindowManager : IDisposable
         Windows.Clear();
         Windows.AddRange(windows);
 
+        if (windows.Count == 0)
+        {
+            return;
+        }
+
         int newZoneCount = (int)Math.Max(1, Math.Ceiling((Windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
         int windowsPerZone = (int)Math.Ceiling(Windows.Count / (float)newZoneCount);
 
