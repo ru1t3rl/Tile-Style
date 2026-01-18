@@ -2,22 +2,22 @@
 
 public partial class WindowStyleChanger
 {
-    internal void SetWindowStyle(IntPtr windowHandle, DWM_WINDOW_CORNER_PREFERENCE style)
+    internal void SetWindowStyle(IntPtr windowHandle, DwmCornerPreference style)
     {
         DwmSetWindowAttribute(
             windowHandle,
-            DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE,
+            DwmWindowAttribute.DWMWA_WINDOW_CORNER_PREFERENCE,
             ref style,
             sizeof(uint));
     }
 
     public void SwitchToFloatingStyle(IntPtr windowHandle)
     {
-        SetWindowStyle(windowHandle, DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND);
+        SetWindowStyle(windowHandle, DwmCornerPreference.DWMWCP_ROUND);
     }
 
     public void SwitchToFullHeightStyle(IntPtr windowHandle)
     {
-        SetWindowStyle(windowHandle, DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DONOTROUND);
+        SetWindowStyle(windowHandle, DwmCornerPreference.DWMWCP_DONOTROUND);
     }
 }
