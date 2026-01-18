@@ -37,6 +37,7 @@ static class Program
         services.AddSingleton<WindowManager>();
         services.AddSingleton<WindowEventHook>();
 
+        services.AddSingleton<WindowStyleChanger>();
         services.AddSingleton<ServiceInstaller>();
         services.AddSingleton<VirtualDesktopHelper>();
         services.AddSingleton<HiddenWindow>();
