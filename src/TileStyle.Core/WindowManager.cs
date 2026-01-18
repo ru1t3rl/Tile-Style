@@ -7,11 +7,12 @@ namespace TileStyle;
 public partial class WindowManager : IDisposable
 {
     public const int MAX_WINDOWS_PER_ZONE = 2;
+    private readonly DwmCornerPreference PREFERED_CORNERS = DwmCornerPreference.DWMWCP_DONOTROUND;
 
     private readonly ILogger<WindowManager> _logger;
     private readonly WindowEventHook _windowEventHook;
-    private SynchronizationContext? _synchronizationContext;
     private readonly VirtualDesktopHelper _virtualDesktop;
+    private readonly WindowStyleChanger _styleChanger;
 
     public List<Window> Windows { get; init; } = new();
     public List<Zone> Zones = new();
@@ -20,11 +21,16 @@ public partial class WindowManager : IDisposable
 
     public IntPtr ActiveWindowHandle => GetForegroundWindow();
 
-    public WindowManager(WindowEventHook windowEventHook, VirtualDesktopHelper virtualDesktop, ILogger<WindowManager> logger)
+    public WindowManager(
+        WindowEventHook windowEventHook,
+        VirtualDesktopHelper virtualDesktop,
+        ILogger<WindowManager> logger,
+        WindowStyleChanger styleChanger)
     {
         _windowEventHook = windowEventHook;
         _virtualDesktop = virtualDesktop;
         _logger = logger;
+        _styleChanger = styleChanger;
 
         _windowEventHook.WindowCreated += AddNewWindow;
         _windowEventHook.WindowDestroyed += CloseWindow;
@@ -35,7 +41,6 @@ public partial class WindowManager : IDisposable
 
     public void InitializeContext()
     {
-        _synchronizationContext = SynchronizationContext.Current;
         UpdateWindows();
     }
 
@@ -81,6 +86,8 @@ public partial class WindowManager : IDisposable
                 bestZone = zone;
             }
         }
+
+        UpdateWindowStyle(window.Handle);
 
         Windows.Add(window);
         bestZone.AddWindow(Windows[^1]);
@@ -136,6 +143,11 @@ public partial class WindowManager : IDisposable
         List<Window> windows = GetWindows().OrderBy(w => w.Position.X).ToList();
         Windows.Clear();
         Windows.AddRange(windows);
+
+        if (windows.Count == 0)
+        {
+            return;
+        }
 
         int newZoneCount = (int)Math.Max(1, Math.Ceiling((Windows.Count / (float)MAX_WINDOWS_PER_ZONE)));
         int windowsPerZone = (int)Math.Ceiling(Windows.Count / (float)newZoneCount);
@@ -195,7 +207,10 @@ public partial class WindowManager : IDisposable
                              (!onlyNewWindows || !IsManagedWindow(window.Handle)))
             .ToList();
 
-        _logger.LogInformation("Found a total of {Count} windows. There are {usable} windows which should be managed.", newWindowHandles.Count, newWindows.Count);
+        _logger.LogInformation("Found a total of {Count} windows. There are {usable} windows which should be managed.",
+            newWindowHandles.Count, newWindows.Count);
+
+        newWindows.ForEach(w => UpdateWindowStyle(w.Handle));
 
         return newWindows;
     }
@@ -226,6 +241,23 @@ public partial class WindowManager : IDisposable
     private bool IsManagedWindow(IntPtr hwnd)
     {
         return Windows.Any(w => w.Handle == hwnd);
+    }
+
+    private void UpdateWindowStyle(IntPtr handle)
+    {
+        switch (PREFERED_CORNERS)
+        {
+            case DwmCornerPreference.DWMWCP_DONOTROUND:
+                _styleChanger.SwitchToFullHeightStyle(handle);
+                break;
+            case DwmCornerPreference.DWMWCP_ROUND:
+                _styleChanger.SwitchToFloatingStyle(handle);
+                break;
+            case DwmCornerPreference.DWMWCP_ROUNDSMALL:
+            case DwmCornerPreference.DWMWCP_DEFAULT:
+                _styleChanger.SetWindowStyle(handle, PREFERED_CORNERS);
+                break;
+        }
     }
 
     public void Dispose()

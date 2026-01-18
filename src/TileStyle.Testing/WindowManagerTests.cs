@@ -13,15 +13,17 @@ public class WindowManagerTests
     private WindowEventHook _windowEventHook = null!;
     private VirtualDesktopHelper _virtualDesktop = null!;
     private WindowManager _windowManager = null!;
-
+    private WindowStyleChanger _styleChanger = null!;
+    
     [SetUp]
     public void Setup()
     {
         _logger = Substitute.For<ILogger<WindowManager>>();
         _windowEventHook = Substitute.For<WindowEventHook>(Substitute.For<ILogger<WindowEventHook>>());
         _virtualDesktop = Substitute.For<VirtualDesktopHelper>(Substitute.For<ILogger<VirtualDesktopHelper>>());
-
-        _windowManager = new WindowManager(_windowEventHook, _virtualDesktop, _logger);
+        _styleChanger = Substitute.For<WindowStyleChanger>();
+        
+        _windowManager = new WindowManager(_windowEventHook, _virtualDesktop, _logger, _styleChanger);
     }
 
     [TearDown]

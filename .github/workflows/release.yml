@@ -122,9 +122,8 @@ jobs:
     needs: [build, publish]
     runs-on: windows-latest
     if: |
-      (contains(github.event.commits.*.added, 'src/') || 
-      contains(github.event.commits.*.modified, 'src/') || 
-      contains(github.event.commits.*.removed, 'src/'))
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     
     steps:
       - name: Checkout code
