@@ -10,7 +10,6 @@ public partial class WindowManager : IDisposable
 
     private readonly ILogger<WindowManager> _logger;
     private readonly WindowEventHook _windowEventHook;
-    private SynchronizationContext? _synchronizationContext;
     private readonly VirtualDesktopHelper _virtualDesktop;
 
     public List<Window> Windows { get; init; } = new();
@@ -35,7 +34,6 @@ public partial class WindowManager : IDisposable
 
     public void InitializeContext()
     {
-        _synchronizationContext = SynchronizationContext.Current;
         UpdateWindows();
     }
 
