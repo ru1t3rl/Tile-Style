@@ -120,6 +120,8 @@ jobs:
 
   release:
     needs: [build, publish]
+    permissions:
+      contents: write
     runs-on: windows-latest
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
