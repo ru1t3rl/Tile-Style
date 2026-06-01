@@ -46,15 +46,28 @@ public abstract class MoveBase : IKeyConsumer
     {
         Zone? nextZone = null;
         int zoneIndex = _windowManager.Zones.IndexOf(zone);
-        if ((MoveDirection == MoveDirection.Right || MoveDirection == MoveDirection.Down) &&
-            zoneIndex < _windowManager.Zones.Count - 1)
+        if (MoveDirection is MoveDirection.Right or MoveDirection.Down)
         {
-            nextZone = _windowManager.Zones[zoneIndex + 1];
+            if(zoneIndex < _windowManager.Zones.Count - 1)
+            {
+                nextZone = _windowManager.Zones[zoneIndex + 1];
+            }
+            else
+            {
+                nextZone = _windowManager.Zones[0];
+            }
         }
 
-        if ((MoveDirection == MoveDirection.Left || MoveDirection == MoveDirection.Up) && zoneIndex > 0)
+        if (MoveDirection is MoveDirection.Left or MoveDirection.Up)
         {
-            nextZone = _windowManager.Zones[zoneIndex - 1];
+            if(zoneIndex > 0)
+            {
+                nextZone = _windowManager.Zones[zoneIndex - 1];
+            }
+            else
+            {
+                nextZone = _windowManager.Zones[^1];
+            }
         }
 
         if (nextZone is null)

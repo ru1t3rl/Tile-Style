@@ -64,7 +64,8 @@ public partial class WindowManager : IDisposable
             window.Floating ||
             window.Minimized ||
             !ShouldManageWindow(window, currentDesktopId) ||
-            IsManagedWindow(window.Handle)
+            IsManagedWindow(window.Handle) ||
+            currentDesktopId == Guid.Empty
         )
         {
             return;
@@ -166,6 +167,7 @@ public partial class WindowManager : IDisposable
         }
 
 
+        Zones.Clear();
         foreach (Screen screen in windows.Keys)
         {
             List<Window> currentWindows = windows[screen];
@@ -176,17 +178,22 @@ public partial class WindowManager : IDisposable
 
             Guid desktopId = _virtualDesktop.GetCurrentDesktop();
 
+            if (desktopId == Guid.Empty)
+            {
+                _logger.LogDebug("Skipping window {, because the desktopId wasn't available.");
+                continue;
+            }
+
             Rectangle workingArea = screen.WorkingArea;
             Rectangle zoneArea = screen.WorkingArea with
             {
                 Width = workingArea.Width / newZoneCount
             };
 
-            Zones.Clear();
             Window[][] chunks = currentWindows.Chunk(windowsPerZone).ToArray();
             for (int iChunk = 0; iChunk < chunks.Count(); iChunk++)
             {
-                zoneArea.X = iChunk * zoneArea.Width;
+                zoneArea.X = zoneArea.X + iChunk * zoneArea.Width;
                 Zone newZone = new()
                 {
                     DesktopId = desktopId,
