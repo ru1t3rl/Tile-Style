@@ -12,18 +12,21 @@ public partial class WindowEventHook : IDisposable
     public event EventHandler<WindowEventArgs>? WindowShown;
     public event EventHandler<WindowEventArgs>? WindowMinimized;
     public event EventHandler<WindowEventArgs>? WindowRestored;
+    
+    private readonly WinEventDelegate _hookDelegate;
 
 
     public WindowEventHook(ILogger<WindowEventHook> logger)
     {
         _logger = logger;
-        WinEventDelegate hookDelegate = new(WindowEventProcessor);
 
+        _hookDelegate = new(WindowEventProcessor);
+        
         _hookHandles[0] = SetWinEventHook(
             EVENT_OBJECT_CREATE,
             EVENT_OBJECT_DESTROY,
             IntPtr.Zero,
-            hookDelegate,
+            _hookDelegate,
             0,
             0,
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
@@ -33,7 +36,7 @@ public partial class WindowEventHook : IDisposable
             EVENT_OBJECT_SHOW,
             EVENT_OBJECT_HIDE,
             IntPtr.Zero,
-            hookDelegate,
+            _hookDelegate,
             0,
             0,
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
@@ -43,7 +46,7 @@ public partial class WindowEventHook : IDisposable
             EVENT_SYSTEM_MINIMIZESTART,
             EVENT_SYSTEM_MINIMIZEEND,
             IntPtr.Zero,
-            hookDelegate,
+            _hookDelegate,
             0,
             0,
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS

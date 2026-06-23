@@ -290,6 +290,12 @@ public partial class WindowManager : IDisposable
         }
     }
 
+    public void MoveFocusedWindowToDesktop(MoveDirection direction)
+    {
+        _virtualDesktop.MoveWindowToNextDesktop(ActiveWindowHandle, direction);
+        UpdateWindows();
+    }
+
     public void Dispose()
     {
         _windowEventHook.Dispose();
