@@ -30,7 +30,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(12345);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowCreated += (_, args) => capturedArgs = args;
+        hook.WindowCreated += (_, args) => Task.FromResult(capturedArgs = args);
         InvokeWindowEventProcessor(hook, 0x8000, expectedHandle);
 
         Assert.That(capturedArgs, Is.Not.Null);
@@ -44,7 +44,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(54321);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowDestroyed += (_, args) => capturedArgs = args;
+        hook.WindowDestroyed += (_, args) => Task.FromResult(capturedArgs = args);
         InvokeWindowEventProcessor(hook, 0x8001, expectedHandle);
 
         Assert.That(capturedArgs, Is.Not.Null);
@@ -58,7 +58,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(99999);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowShown += (_, args) => capturedArgs = args;
+        hook.WindowShown += (_, args) => Task.FromResult(capturedArgs = args);
 
         InvokeWindowEventProcessor(hook, 0x8002, expectedHandle);
 
@@ -73,7 +73,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(11111);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowMinimized += (_, args) => capturedArgs = args;
+        hook.WindowMinimized += (_, args) => Task.FromResult(capturedArgs = args);
         InvokeWindowEventProcessor(hook, 0x8003, expectedHandle);
 
         Assert.That(capturedArgs, Is.Not.Null);
@@ -87,7 +87,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(22222);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowMinimized += (_, args) => capturedArgs = args;
+        hook.WindowMinimized += (_, args) => Task.FromResult(capturedArgs = args);
         InvokeWindowEventProcessor(hook, 0x0016, expectedHandle);
 
         Assert.That(capturedArgs, Is.Not.Null);
@@ -101,7 +101,7 @@ public class WindowEventHookTests
         var expectedHandle = new IntPtr(33333);
         WindowEventArgs? capturedArgs = null;
 
-        hook.WindowRestored += (_, args) => capturedArgs = args;
+        hook.WindowRestored += (_, args) => Task.FromResult(capturedArgs = args);
         InvokeWindowEventProcessor(hook, 0x0017, expectedHandle);
 
         Assert.That(capturedArgs, Is.Not.Null);
@@ -114,7 +114,7 @@ public class WindowEventHookTests
         using var hook = new WindowEventHook(_logger);
         var eventRaised = false;
 
-        hook.WindowCreated += (_, _) => eventRaised = true;
+        hook.WindowCreated += (_, _) => Task.FromResult(eventRaised = true);
         InvokeWindowEventProcessor(hook, 0x8000, new IntPtr(12345), idObject: 1);
 
         Assert.That(eventRaised, Is.False);
@@ -126,7 +126,7 @@ public class WindowEventHookTests
         using var hook = new WindowEventHook(_logger);
         var eventRaised = false;
 
-        hook.WindowCreated += (_, _) => eventRaised = true;
+        hook.WindowCreated += (_, _) => Task.FromResult(eventRaised = true);
         InvokeWindowEventProcessor(hook, 0x8000, new IntPtr(12345), idChild: 1);
 
         Assert.That(eventRaised, Is.False);
@@ -138,7 +138,7 @@ public class WindowEventHookTests
         using var hook = new WindowEventHook(_logger);
         var eventRaised = false;
 
-        hook.WindowCreated += (_, _) => eventRaised = true;
+        hook.WindowCreated += (_, _) => Task.FromResult(eventRaised = true);
         InvokeWindowEventProcessor(hook, 0x8000, IntPtr.Zero);
 
         Assert.That(eventRaised, Is.False);
@@ -179,8 +179,8 @@ public class WindowEventHookTests
         var handler1Called = false;
         var handler2Called = false;
 
-        hook.WindowCreated += (_, _) => handler1Called = true;
-        hook.WindowCreated += (_, _) => handler2Called = true;
+        hook.WindowCreated += (_, _) => Task.FromResult(handler1Called = true);
+        hook.WindowCreated += (_, _) => Task.FromResult(handler2Called = true);
 
         InvokeWindowEventProcessor(hook, 0x8000, new IntPtr(12345));
 

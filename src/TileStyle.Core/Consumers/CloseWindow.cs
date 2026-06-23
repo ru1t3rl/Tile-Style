@@ -21,7 +21,7 @@ public class CloseWindow : IKeyConsumer
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
         WindowEventArgs eventArgs = new(_windowManager.ActiveWindowHandle);
-        _windowManager.CloseWindow(sender, eventArgs);
+        _windowManager.CloseWindowAsync(sender, eventArgs);
         return Task.CompletedTask;
     }
 }

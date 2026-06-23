@@ -17,6 +17,7 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+      <PackageReference Include="Microsoft.VisualStudio.Threading" Version="18.7.23" />
       <PackageReference Include="Scrutor" Version="7.0.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />

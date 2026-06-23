@@ -64,7 +64,7 @@ public class WindowManagerTests
         _windowManager.ScreenGroupedWindows.Add(screen, [testWindow]);
 
         var args = new WindowEventArgs(testHandle);
-        _windowManager.CloseWindow(null, args);
+        _windowManager.CloseWindowAsync(null, args);
 
         Assert.That(_windowManager.ScreenGroupedWindows[screen], Does.Not.Contain(testWindow));
     }
@@ -75,7 +75,7 @@ public class WindowManagerTests
         var nonExistentHandle = new IntPtr(99999);
         var args = new WindowEventArgs(nonExistentHandle);
 
-        Assert.DoesNotThrow(() => _windowManager.CloseWindow(null, args));
+        Assert.DoesNotThrow(() => _windowManager.CloseWindowAsync(null, args));
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class WindowManagerTests
         zone.AddWindow(testWindow);
 
         var args = new WindowEventArgs(testHandle);
-        _windowManager.CloseWindow(null, args);
+        _windowManager.CloseWindowAsync(null, args);
 
         Assert.That(zone.Windows, Does.Not.Contain(testWindow));
     }

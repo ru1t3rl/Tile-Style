@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using TileStyle.Models;
 using TileStyle.Windows;
+using WindowsDesktop;
 
 namespace TileStyle;
 
@@ -14,9 +15,14 @@ public partial class WindowManager : IDisposable
     private readonly VirtualDesktopHelper _virtualDesktop;
     private readonly WindowStyleChanger _styleChanger;
 
-    public Dictionary<Screen, List<Window>> ScreenGroupedWindows { get; } = new();
-    public List<Window> Windows => ScreenGroupedWindows.SelectMany(w => w.Value).ToList();
-    public List<Zone> Zones = new();
+    public readonly Dictionary<Screen, List<Window>> ScreenGroupedWindows = new();
+    public readonly List<Zone> Zones = new();
+    public readonly List<Window> FloatingWindows = new();
+
+    public List<Window> Windows => ScreenGroupedWindows
+        .SelectMany(w => w.Value)
+        .Concat(FloatingWindows)
+        .ToList();
 
     private bool _tilingEnabled = true;
 
@@ -33,49 +39,74 @@ public partial class WindowManager : IDisposable
         _logger = logger;
         _styleChanger = styleChanger;
 
-        _windowEventHook.WindowCreated += AddNewWindow;
-        _windowEventHook.WindowDestroyed += CloseWindow;
-        _windowEventHook.WindowShown += AddNewWindow;
-        _windowEventHook.WindowMinimized += CloseWindow;
-        _windowEventHook.WindowRestored += AddNewWindow;
+        _windowEventHook.WindowCreated += AddNewWindowAsync;
+        _windowEventHook.WindowDestroyed += CloseWindowAsync;
+        _windowEventHook.WindowShown += AddNewWindowAsync;
+        _windowEventHook.WindowMinimized += CloseWindowAsync;
+        _windowEventHook.WindowRestored += AddNewWindowAsync;
+        _windowEventHook.MouseFocusChanged += OnMouseFocusChanged;
     }
 
-    public void InitializeContext()
+    public async Task InitializeContext()
     {
-        UpdateWindows();
+        await UpdateWindows();
     }
 
-    public void ToggleTiling()
+    public async Task ToggleTiling()
     {
         _tilingEnabled = !_tilingEnabled;
         if (!_tilingEnabled)
         {
-            UpdateWindows();
+            await UpdateWindows();
         }
     }
 
-    public void AddNewWindow(object? sender, WindowEventArgs e)
+    private void OnMouseFocusChanged(object? sender, WindowEventArgs e)
+    {
+        if (!IsManagedWindow(e.WindowHandle)) return;
+        SetForegroundWindow(e.WindowHandle);
+        _logger.LogDebug($"Mouse focus changed to {e.WindowHandle}");
+    }
+
+    public async Task AddNewWindowAsync(object? sender, WindowEventArgs e)
     {
         Window window = new Window(e.WindowHandle);
         Guid currentDesktopId = _virtualDesktop.GetCurrentDesktop();
+
+        if (currentDesktopId == Guid.Empty)
+        {
+            currentDesktopId = await Task.Run(() => VirtualDesktop.FromHwnd(window.Handle)?.Id ?? Guid.Empty);
+        }
+
+        _logger.LogDebug("In add zone");
+
+        bool shouldManage = ShouldManageWindow(window, currentDesktopId);
+        bool isManagedWindow = IsManagedWindow(window.Handle);
+
+        _logger.LogDebug("SHOULD: {shouldM}, IsMan: {isManag}, IsVisisble: {v}, floating: {f}, minimized: {m}", shouldManage,
+            isManagedWindow, window.Visible, window.Floating, window.Minimized);
+
+        _logger.LogDebug("Current D: {d}", currentDesktopId);
 
         if (
             !window.Visible ||
             window.Floating ||
             window.Minimized ||
-            !ShouldManageWindow(window, currentDesktopId) ||
-            IsManagedWindow(window.Handle) ||
+            !shouldManage ||
+            isManagedWindow ||
             currentDesktopId == Guid.Empty
         )
         {
             return;
         }
 
+        _logger.LogDebug("Doing more");
+
         int bestDistance = CalculateDistance(Zones[0], window);
         Zone bestZone = Zones[0];
         if (bestZone.Windows.Count >= MAX_WINDOWS_PER_ZONE)
         {
-            UpdateWindows();
+            await UpdateWindows();
             return;
         }
 
@@ -96,7 +127,7 @@ public partial class WindowManager : IDisposable
         bestZone.AddWindow(ScreenGroupedWindows[screen][^1]);
     }
 
-    public void CloseWindow(object? sender, WindowEventArgs e)
+    public async Task CloseWindowAsync(object? sender, WindowEventArgs e)
     {
         Window? window = Windows.SingleOrDefault(w => w.Handle == e.WindowHandle);
         if (window is null)
@@ -117,7 +148,7 @@ public partial class WindowManager : IDisposable
             zone.RemoveWindow(e.WindowHandle);
             if (zone.IsEmpty)
             {
-                UpdateWindows();
+                await UpdateWindows();
                 break;
             }
         }
@@ -137,14 +168,14 @@ public partial class WindowManager : IDisposable
     /// The update windows function performs a full refresh of the entire manager environment.
     /// This will clear/reset the <see cref="Zones"/> and <see cref="ScreenGroupedWindows"/> lists.
     /// </summary>
-    private void UpdateWindows()
+    private async Task UpdateWindows()
     {
         if (!_tilingEnabled)
         {
             return;
         }
 
-        Dictionary<Screen, List<Window>> windows = GetWindows()
+        Dictionary<Screen, List<Window>> windows = (await GetWindows())
             .Select(window =>
             {
                 Screen screen = Screen.FromHandle(window.Handle);
@@ -180,7 +211,7 @@ public partial class WindowManager : IDisposable
 
             if (desktopId == Guid.Empty)
             {
-                _logger.LogDebug("Skipping window {, because the desktopId wasn't available.");
+                _logger.LogDebug("Skipping windows, because the desktopId wasn't available.");
                 continue;
             }
 
@@ -212,7 +243,7 @@ public partial class WindowManager : IDisposable
     /// </summary>
     /// <param name="onlyNewWindows">When true, only unmanaged windows will be returned.</param>
     /// <returns>A list of windows</returns>
-    private List<Window> GetWindows(bool onlyNewWindows = false)
+    private async Task<List<Window>> GetWindows(bool onlyNewWindows = false)
     {
         List<IntPtr> newWindowHandles = new();
         IntPtr[] existingWindows = Windows.Select(window => window.Handle).ToArray();
@@ -290,10 +321,10 @@ public partial class WindowManager : IDisposable
         }
     }
 
-    public void MoveFocusedWindowToDesktop(MoveDirection direction)
+    public async Task MoveFocusedWindowToDesktop(MoveDirection direction)
     {
         _virtualDesktop.MoveWindowToNextDesktop(ActiveWindowHandle, direction);
-        UpdateWindows();
+        await UpdateWindows();
     }
 
     public void Dispose()
