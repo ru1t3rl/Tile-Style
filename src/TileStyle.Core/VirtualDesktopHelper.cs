@@ -1,43 +1,23 @@
-﻿
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TileStyle.Models;
+using WindowsDesktop;
 
 namespace TileStyle;
 
 public partial class VirtualDesktopHelper
 {
-    private readonly IVirtualDesktopManager? _manager;
     private readonly ILogger<VirtualDesktopHelper> _logger;
 
     public VirtualDesktopHelper(ILogger<VirtualDesktopHelper> logger)
     {
         _logger = logger;
-        try
-        {
-            var shell = new CVirtualDesktopManagerInternal();
-            _manager = (IVirtualDesktopManager)shell;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to initialize VirtualDesktopHelper");
-            _manager = null;
-        }
     }
 
     public Guid GetCurrentDesktop()
     {
-        if (_manager == null) return Guid.Empty;
-
         try
         {
-            IntPtr hwnd = GetForegroundWindow();
-            if (hwnd != IntPtr.Zero)
-            {
-                _manager.GetWindowDesktopId(hwnd, out Guid desktopId);
-                return desktopId;
-            }
-            return Guid.Empty;
+            return VirtualDesktop.Current.Id;
         }
         catch
         {
@@ -47,26 +27,54 @@ public partial class VirtualDesktopHelper
 
     public Guid GetWindowDesktop(IntPtr hwnd)
     {
-        if (_manager == null) return Guid.Empty;
-
         try
         {
-            _manager.GetWindowDesktopId(hwnd, out Guid desktopId);
-            return desktopId;
+            var desktop = VirtualDesktop.FromHwnd(hwnd);
+            return desktop?.Id ?? Guid.Empty;
         }
         catch
         {
             return Guid.Empty;
         }
     }
-    
+
+    public void SwitchToDesktop(MoveDirection direction)
+    {
+        var current = VirtualDesktop.Current;
+        var target = direction switch
+        {
+            MoveDirection.Left => current.GetLeft(),
+            MoveDirection.Right => current.GetRight(),
+            _ => null
+        };
+
+        if (direction is MoveDirection.Left && target is null)
+        {
+            _logger.LogError("Failed to move to desktop on the left.");
+            return;
+        }
+
+        if (direction is MoveDirection.Right && target is null)
+        {
+            target = VirtualDesktop.Create();
+        }
+        
+        target?.Switch();
+    }
+
     public void MoveWindowToDesktop(IntPtr hwnd, Guid desktopId)
     {
-        if (_manager == null) return;
-        
         try
         {
-            _manager.MoveWindowToDesktop(hwnd, ref desktopId);
+            VirtualDesktop? desktop = VirtualDesktop.GetDesktops().FirstOrDefault(d => d.Id == desktopId);
+
+            if (desktop is null)
+            {
+                _logger.LogError("Failed to move window {hwnd} to desktop {DesktopId} it couldn't be found.", hwnd, desktopId);
+                return;
+            }
+
+            VirtualDesktop.MoveToDesktop(hwnd, desktop);
         }
         catch
         {
@@ -74,36 +82,40 @@ public partial class VirtualDesktopHelper
         }
     }
 
-    public void SwitchToDesktop(MoveDirection direction)
+    public void MoveWindowToNextDesktop(nint hwnd, MoveDirection direction)
     {
-        // Simulate Win+Ctrl+Left or Win+Ctrl+Right keyboard shortcuts
-        // These are the built-in Windows shortcuts for switching virtual desktops
-        
-        try
+        var current = VirtualDesktop.FromHwnd(hwnd);
+        if (current is null)
         {
-            // Press Win
-            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
-            // Press Ctrl
-            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-            // Press Left or Right arrow
-            byte arrowKey = direction == MoveDirection.Left ? VK_LEFT : VK_RIGHT;
-            keybd_event(arrowKey, 0, 0, UIntPtr.Zero);
-            
-            // Small delay to ensure keys are registered
-            Thread.Sleep(50);
-            
-            // Release Left or Right arrow
-            keybd_event(arrowKey, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-            // Release Ctrl
-            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-            // Release Win
-            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-            
-            _logger.LogDebug("Switched desktop {Direction}", direction);
+            _logger.LogError("Failed to move window {hwnd} to current desktop couldn't be found.", hwnd);
+            return;
         }
-        catch (Exception ex)
+
+        var target = direction switch
         {
-            _logger.LogError(ex, "Failed to switch desktop");
+            MoveDirection.Left => current.GetLeft(),
+            MoveDirection.Right => current.GetRight(),
+            _ => null
+        };
+
+        if (direction is MoveDirection.Left && target is null)
+        {
+            _logger.LogError("Failed to move window {hwnd} to left desktop couldn't be found.", hwnd);
+            return;
         }
+
+        if (direction is MoveDirection.Right && target is null)
+        {
+            target = VirtualDesktop.Create();
+        }
+
+        if (target is null)
+        {
+            _logger.LogError("Unsupported window move direction {direction}.", direction);
+            return;
+        }
+
+        VirtualDesktop.MoveToDesktop(hwnd, target);
+        target.Switch();
     }
 }

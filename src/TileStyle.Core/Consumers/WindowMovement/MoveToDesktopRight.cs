@@ -17,9 +17,8 @@ public class MoveToDesktopRight : IKeyConsumer
         _windowManager = windowManager;
     }
 
-    public Task ExecuteAsync(object? sender, EventArgs e)
+    public async Task ExecuteAsync(object? sender, EventArgs e)
     {
-        // _windowManager.MoveWindowToDesktop((int)MoveDirection.Right);
-        return Task.CompletedTask;
+        await Task.Run(() => _windowManager.MoveFocusedWindowToDesktop(MoveDirection.Right));
     }
 }

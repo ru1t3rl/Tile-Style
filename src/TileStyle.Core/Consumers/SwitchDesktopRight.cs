@@ -5,11 +5,11 @@ namespace TileStyle.Consumers;
 
 public class SwitchDesktopRight : IKeyConsumer
 {
-    private readonly VirtualDesktopHelper _helper;
+    private readonly VirtualDesktopHelper _virtualDesktopHelper;
 
-    public SwitchDesktopRight(VirtualDesktopHelper helper)
+    public SwitchDesktopRight(VirtualDesktopHelper virtualDesktopHelper)
     {
-        _helper = helper;
+        _virtualDesktopHelper = virtualDesktopHelper;
     }
 
     public HotKey HotKey => new(
@@ -17,9 +17,8 @@ public class SwitchDesktopRight : IKeyConsumer
         ModifierKeys.Win
     );
 
-    public Task ExecuteAsync(object? sender, EventArgs e)
+    public async Task ExecuteAsync(object? sender, EventArgs e)
     {
-        _helper.SwitchToDesktop(MoveDirection.Right);
-        return Task.CompletedTask;
+        await Task.Run(() =>_virtualDesktopHelper.SwitchToDesktop(MoveDirection.Right));
     }
 }
