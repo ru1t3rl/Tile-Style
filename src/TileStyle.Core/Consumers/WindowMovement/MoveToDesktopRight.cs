@@ -9,7 +9,7 @@ public class MoveToDesktopRight : IKeyConsumer
 
     public HotKey HotKey => new(
         Keys.Right,
-        ModifierKeys.Win | ModifierKeys.Control
+        ModifierKeys.Win | ModifierKeys.Alt | ModifierKeys.Control
     );
 
     public MoveToDesktopRight(WindowManager windowManager)

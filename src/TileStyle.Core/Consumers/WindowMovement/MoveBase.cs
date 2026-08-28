@@ -1,18 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
 using TileStyle.Keyboard;
 using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Consumers.WindowMovement;
 
 public abstract class MoveBase : IKeyConsumer
 {
     private readonly ILogger<MoveBase> _logger;
+    private readonly WindowStore _windowStore;
     protected readonly WindowManager _windowManager;
 
-    public MoveBase(WindowManager windowManager, ILogger<MoveBase> logger)
+    public MoveBase(WindowManager windowManager, ILogger<MoveBase> logger, WindowStore windowStore)
     {
         _windowManager = windowManager;
         _logger = logger;
+        _windowStore = windowStore;
     }
 
     public abstract HotKey HotKey { get; }
@@ -20,7 +23,7 @@ public abstract class MoveBase : IKeyConsumer
 
     public Task ExecuteAsync(object? sender, EventArgs e)
     {
-        Window? activeWindow = _windowManager.Windows
+        Window? activeWindow = _windowStore.Windows
             .SingleOrDefault(w => w.Handle == _windowManager.ActiveWindowHandle);
 
         if (activeWindow is null)
@@ -29,11 +32,11 @@ public abstract class MoveBase : IKeyConsumer
             return Task.CompletedTask;
         }
 
-        int zoneIndex = _windowManager.Zones.FindIndex(z =>
+        int zoneIndex = _windowStore.Zones.FindIndex(z =>
             z.Windows.Any(w => w.Handle == activeWindow.Handle)
         );
 
-        Zone activeZone = _windowManager.Zones[zoneIndex];
+        Zone activeZone = _windowStore.Zones[zoneIndex];
         if (!activeZone.TryMove(activeWindow, MoveDirection) && !TryChangeZone(activeWindow, activeZone))
         {
             _logger.LogError("Window move failed.");
@@ -45,16 +48,16 @@ public abstract class MoveBase : IKeyConsumer
     private bool TryChangeZone(Window window, Zone zone)
     {
         Zone? nextZone = null;
-        int zoneIndex = _windowManager.Zones.IndexOf(zone);
+        int zoneIndex = _windowStore.Zones.IndexOf(zone);
         if (MoveDirection is MoveDirection.Right or MoveDirection.Down)
         {
-            if(zoneIndex < _windowManager.Zones.Count - 1)
+            if(zoneIndex < _windowStore.Zones.Count - 1)
             {
-                nextZone = _windowManager.Zones[zoneIndex + 1];
+                nextZone = _windowStore.Zones[zoneIndex + 1];
             }
             else
             {
-                nextZone = _windowManager.Zones[0];
+                nextZone = _windowStore.Zones[0];
             }
         }
 
@@ -62,11 +65,11 @@ public abstract class MoveBase : IKeyConsumer
         {
             if(zoneIndex > 0)
             {
-                nextZone = _windowManager.Zones[zoneIndex - 1];
+                nextZone = _windowStore.Zones[zoneIndex - 1];
             }
             else
             {
-                nextZone = _windowManager.Zones[^1];
+                nextZone = _windowStore.Zones[^1];
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using Microsoft.Extensions.Logging;
 using TileStyle.Consumers;
 using TileStyle.Models;
 using TileStyle.Common;
@@ -10,10 +11,12 @@ public class KeyboardEventService : BackgroundService
     private readonly FrozenDictionary<HotKey, IKeyConsumer[]> _keyConsumers;
     private readonly IKeyboardHook _keyboardHook;
     private readonly List<int> _keyboardHookIds = new();
+    private readonly ILogger<KeyboardEventService> _logger;
 
-    public KeyboardEventService(IEnumerable<IKeyConsumer> keyConsumers, IKeyboardHook keyboardHook)
+    public KeyboardEventService(IEnumerable<IKeyConsumer> keyConsumers, IKeyboardHook keyboardHook, ILogger<KeyboardEventService> logger)
     {
         _keyboardHook = keyboardHook;
+        _logger = logger;
         _keyConsumers = keyConsumers
             .GroupBy(k => k.HotKey)
             .ToFrozenDictionary(
@@ -63,9 +66,19 @@ public class KeyboardEventService : BackgroundService
             return;
         }
 
-        foreach (IKeyConsumer keyConsumer in consumers)
+        await Task.Run(async () =>
         {
-            await keyConsumer.ExecuteAsync(sender, e);
-        }
+            foreach (var keyConsumer in consumers)
+            {
+                try
+                {
+                    await keyConsumer.ExecuteAsync(sender, e);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Key consumer failed");
+                }
+            }
+        });
     }
 }
