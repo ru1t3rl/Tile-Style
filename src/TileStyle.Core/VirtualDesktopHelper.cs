@@ -51,8 +51,8 @@ public partial class VirtualDesktopHelper
         store.DesktopGroupedWindows.TryGetValue(desktopId, out List<Window>? windows);
 
         if (desktop is not null &&
-            windows is null ||
-            windows?.Count <= 0
+            (windows is null ||
+             windows?.Count <= 0)
            )
         {
             desktop?.Remove();
