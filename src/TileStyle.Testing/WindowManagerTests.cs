@@ -14,6 +14,8 @@ public class WindowManagerTests
     private WindowEventHook _windowEventHook = null!;
     private VirtualDesktopHelper _virtualDesktop = null!;
     private WindowManager _windowManager = null!;
+    private WindowStore _windowStore = null!;
+    private IServiceProvider _serviceProvider = null!;
     private WindowStyleChanger _styleChanger = null!;
     
     [SetUp]
@@ -21,10 +23,15 @@ public class WindowManagerTests
     {
         _logger = Substitute.For<ILogger<WindowManager>>();
         _windowEventHook = Substitute.For<WindowEventHook>(Substitute.For<ILogger<WindowEventHook>>());
-        _virtualDesktop = Substitute.For<VirtualDesktopHelper>(Substitute.For<ILogger<VirtualDesktopHelper>>());
         _styleChanger = Substitute.For<WindowStyleChanger>();
         
-        _windowManager = new WindowManager(_windowEventHook, _virtualDesktop, _logger, _styleChanger);
+        _windowStore = Substitute.For<WindowStore>();
+        
+        _serviceProvider = Substitute.For<IServiceProvider>();
+        _serviceProvider.GetService(typeof(WindowStore)).Returns(_windowStore);
+        
+        _virtualDesktop = Substitute.For<VirtualDesktopHelper>(Substitute.For<ILogger<VirtualDesktopHelper>>(), _serviceProvider);
+        _windowManager = new WindowManager(_windowEventHook, _virtualDesktop, _logger, _styleChanger, _windowStore);
     }
 
     [TearDown]
@@ -37,13 +44,13 @@ public class WindowManagerTests
     [Test]
     public void Constructor_InitializesWindowsListAsEmpty()
     {
-        Assert.That(_windowManager.ScreenGroupedWindows, Is.Empty);
+        Assert.That(_windowStore.ScreenGroupedWindows, Is.Empty);
     }
 
     [Test]
     public void Constructor_InitializesZonesListAsEmpty()
     {
-        Assert.That(_windowManager.Zones, Is.Empty);
+        Assert.That(_windowStore.Zones, Is.Empty);
     }
 
     [Test]
@@ -61,12 +68,12 @@ public class WindowManagerTests
         var testHandle = new IntPtr(12345);
         var testWindow = CreateMockWindow(testHandle);
         Screen screen = Screen.FromHandle(testWindow.Handle);
-        _windowManager.ScreenGroupedWindows.Add(screen, [testWindow]);
+        _windowStore.ScreenGroupedWindows.Add(screen, [testWindow]);
 
         var args = new WindowEventArgs(testHandle);
         _windowManager.CloseWindowAsync(null, args);
 
-        Assert.That(_windowManager.ScreenGroupedWindows[screen], Does.Not.Contain(testWindow));
+        Assert.That(_windowStore.ScreenGroupedWindows[screen], Does.Not.Contain(testWindow));
     }
 
     [Test]
@@ -91,8 +98,8 @@ public class WindowManagerTests
         };
 
         Screen screen = Screen.FromHandle(testWindow.Handle);
-        _windowManager.ScreenGroupedWindows.Add(screen, [testWindow]);
-        _windowManager.Zones.Add(zone);
+        _windowStore.ScreenGroupedWindows.Add(screen, [testWindow]);
+        _windowStore.Zones.Add(zone);
         zone.AddWindow(testWindow);
 
         var args = new WindowEventArgs(testHandle);
