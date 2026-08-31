@@ -180,7 +180,7 @@ public partial class WindowManager : IDisposable
     /// The update windows function performs a full refresh of the entire manager environment.
     /// This will clear/reset the <see cref="Zones"/> and <see cref="ScreenGroupedWindows"/> lists.
     /// </summary>
-    private async Task UpdateWindows()
+    public async Task UpdateWindows()
     {
         if (!_tilingEnabled)
         {
