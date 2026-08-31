@@ -5,6 +5,7 @@ namespace TileStyle.Models;
 
 public partial class Window
 {
+    private const uint SWP_ASYNCWINDOWPOS = 0x4000;
     private const uint SWP_NOZORDER = 0x0004;
     private const uint SWP_NOACTIVATE = 0x0010;
     

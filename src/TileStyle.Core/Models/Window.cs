@@ -77,7 +77,7 @@ public partial class Window
             _rect.Y,
             _rect.Width,
             _rect.Height,
-            SWP_NOZORDER | SWP_NOACTIVATE
+            SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_NOACTIVATE
         );
     }
 }
