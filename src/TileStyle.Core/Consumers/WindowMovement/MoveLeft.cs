@@ -1,12 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using TileStyle.Keyboard;
 using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveLeft : MoveBase
 {
-    public MoveLeft(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
+    public MoveLeft(WindowManager windowManager, ILogger<MoveBase> logger, WindowStore store)
+        : base(windowManager, logger, store)
     {
     }
 

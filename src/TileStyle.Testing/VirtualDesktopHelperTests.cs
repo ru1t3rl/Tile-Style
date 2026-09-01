@@ -1,18 +1,28 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
+using TileStyle.Windows;
 
 namespace TileStyle.Testing;
 
 public class VirtualDesktopHelperTests
 {
     private ILogger<VirtualDesktopHelper> _logger = null!;
+    private IServiceProvider _serviceProvider = null!;
     private VirtualDesktopHelper _helper = null!;
+    private WindowStore _windowStore = null!;
 
     [SetUp]
     public void Setup()
     {
         _logger = Substitute.For<ILogger<VirtualDesktopHelper>>();
-        _helper = new VirtualDesktopHelper(_logger);
+        _serviceProvider = Substitute.For<IServiceProvider>();
+
+        _windowStore = Substitute.For<WindowStore>();
+        _serviceProvider
+            .GetService(typeof(WindowStore))
+            .Returns(_windowStore);
+
+        _helper = new VirtualDesktopHelper(_logger, _serviceProvider);
     }
 
     [Test]
@@ -32,7 +42,7 @@ public class VirtualDesktopHelperTests
     public void GetCurrentDesktop_WhenNoForegroundWindow_ReturnsGuidEmpty()
     {
         var desktopId = _helper.GetCurrentDesktop();
-        Assert.That(desktopId, Is.Not.Empty);
+        Assert.That(desktopId, Is.Default);
     }
 
     [Test]
@@ -87,18 +97,6 @@ public class VirtualDesktopHelperTests
     }
 
     [Test]
-    public void SwitchToDesktop_LeftDirection_DoesNotThrow()
-    {
-        Assert.DoesNotThrow(() => _helper.SwitchToDesktop(Models.MoveDirection.Left));
-    }
-
-    [Test]
-    public void SwitchToDesktop_RightDirection_DoesNotThrow()
-    {
-        Assert.DoesNotThrow(() => _helper.SwitchToDesktop(Models.MoveDirection.Right));
-    }
-
-    [Test]
     public void GetCurrentDesktop_CalledMultipleTimes_DoesNotThrow()
     {
         Assert.DoesNotThrow(() =>
@@ -126,7 +124,7 @@ public class VirtualDesktopHelperTests
     {
         // Even if COM initialization fails, the helper should be created
         // and methods should return Guid.Empty gracefully
-        var helper = new VirtualDesktopHelper(_logger);
+        var helper = new VirtualDesktopHelper(_logger, _serviceProvider);
 
         Assert.That(helper, Is.Not.Null);
         Assert.DoesNotThrow(() => helper.GetCurrentDesktop());

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using TileStyle.Keyboard;
 using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Consumers.WindowMovement;
 
@@ -12,8 +13,9 @@ public class MoveRight : MoveBase
     );
 
     protected override MoveDirection MoveDirection => MoveDirection.Right;
-    
-    public MoveRight(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
+
+    public MoveRight(WindowManager windowManager, ILogger<MoveBase> logger, WindowStore store) 
+        : base(windowManager, logger, store)
     {
     }
 }

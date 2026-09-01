@@ -1,12 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using TileStyle.Keyboard;
 using TileStyle.Models;
+using TileStyle.Windows;
 
 namespace TileStyle.Consumers.WindowMovement;
 
 public class MoveUp : MoveBase
 {
-    public MoveUp(WindowManager windowManager, ILogger<MoveBase> logger) : base(windowManager, logger)
+    public MoveUp(WindowManager windowManager, ILogger<MoveBase> logger, WindowStore store) 
+        : base(windowManager, logger, store)
     {
     }
 

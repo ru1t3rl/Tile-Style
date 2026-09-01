@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TileStyle.Models;
+using TileStyle.Windows;
 using WindowsDesktop;
 
 namespace TileStyle;
@@ -7,10 +9,12 @@ namespace TileStyle;
 public partial class VirtualDesktopHelper
 {
     private readonly ILogger<VirtualDesktopHelper> _logger;
+    private readonly IServiceProvider _serviceProvider;
 
-    public VirtualDesktopHelper(ILogger<VirtualDesktopHelper> logger)
+    public VirtualDesktopHelper(ILogger<VirtualDesktopHelper> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     public Guid GetCurrentDesktop()
@@ -34,11 +38,28 @@ public partial class VirtualDesktopHelper
         }
         catch
         {
+            _logger.LogError("Failed to get window desktop {hwnd}.", hwnd);
             return Guid.Empty;
         }
     }
 
-    public void SwitchToDesktop(MoveDirection direction)
+    public void RemoveDesktopIfEmpty(Guid desktopId)
+    {
+        VirtualDesktop? desktop = VirtualDesktop.FromId(desktopId);
+
+        WindowStore store = _serviceProvider.GetRequiredService<WindowStore>();
+        store.DesktopGroupedWindows.TryGetValue(desktopId, out List<Window>? windows);
+
+        if (desktop is not null &&
+            (windows is null ||
+             windows?.Count <= 0)
+           )
+        {
+            desktop?.Remove();
+        }
+    }
+
+    public void SwitchToDesktop(MoveDirection direction, bool removeOldIfEmpty = true)
     {
         var current = VirtualDesktop.Current;
         var target = direction switch
@@ -47,6 +68,8 @@ public partial class VirtualDesktopHelper
             MoveDirection.Right => current.GetRight(),
             _ => null
         };
+
+        Guid currentDesktopId = current?.Id ?? Guid.Empty;
 
         if (direction is MoveDirection.Left && target is null)
         {
@@ -58,8 +81,9 @@ public partial class VirtualDesktopHelper
         {
             target = VirtualDesktop.Create();
         }
-        
+
         target?.Switch();
+        RemoveDesktopIfEmpty(currentDesktopId);
     }
 
     public void MoveWindowToDesktop(IntPtr hwnd, Guid desktopId)
@@ -70,7 +94,8 @@ public partial class VirtualDesktopHelper
 
             if (desktop is null)
             {
-                _logger.LogError("Failed to move window {hwnd} to desktop {DesktopId} it couldn't be found.", hwnd, desktopId);
+                _logger.LogError("Failed to move window {hwnd} to desktop {DesktopId} it couldn't be found.", hwnd,
+                    desktopId);
                 return;
             }
 

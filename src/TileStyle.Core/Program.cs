@@ -34,6 +34,7 @@ static class Program
     static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
         services.AddSingleton<WindowManagerContext>();
+        services.AddSingleton<WindowStore>();
         services.AddSingleton<WindowManager>();
         services.AddSingleton<WindowEventHook>();
 

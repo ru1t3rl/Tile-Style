@@ -90,7 +90,7 @@ public class Zone
             {
                 return false;
             }
-            
+
             neighbor = _windows[windowIndex + 1];
         }
         else if (moveDirection == MoveDirection.Left || moveDirection == MoveDirection.Up)
@@ -99,8 +99,21 @@ public class Zone
             {
                 return false;
             }
-            
+
             neighbor = _windows[windowIndex - 1];
+        }
+
+        if (Mode == LayoutMode.Horizontal && (
+                moveDirection == MoveDirection.Up || moveDirection == MoveDirection.Down
+            ))
+        {
+            SetLayoutMode(LayoutMode.Vertical);
+        }
+        else if (Mode == LayoutMode.Vertical && (
+                     moveDirection == MoveDirection.Left || moveDirection == MoveDirection.Right
+                 ))
+        {
+            SetLayoutMode(LayoutMode.Horizontal);
         }
 
         (Vector2 newOwnPos, Vector2 newNeighborPos) = (neighbor!.Position, window.Position);

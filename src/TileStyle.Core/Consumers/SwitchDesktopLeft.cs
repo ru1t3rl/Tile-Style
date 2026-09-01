@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using TileStyle.Keyboard;
+﻿using TileStyle.Keyboard;
 using TileStyle.Models;
 
 namespace TileStyle.Consumers;
@@ -7,12 +6,12 @@ namespace TileStyle.Consumers;
 public class SwitchDesktopLeft : IKeyConsumer
 {
     private readonly VirtualDesktopHelper _helper;
-    private readonly WindowManager _manager;
+    private readonly WindowManager _windowManager;
 
-    public SwitchDesktopLeft(VirtualDesktopHelper helper, WindowManager manager)
+    public SwitchDesktopLeft(VirtualDesktopHelper helper, WindowManager windowManager)
     {
         _helper = helper;
-        _manager = manager;
+        _windowManager = windowManager;
     }
 
     public HotKey HotKey => new(
@@ -22,6 +21,7 @@ public class SwitchDesktopLeft : IKeyConsumer
 
     public async Task ExecuteAsync(object? sender, EventArgs e)
     {
-        await Task.Run(() => _helper.SwitchToDesktop(MoveDirection.Left));
+        _helper.SwitchToDesktop(MoveDirection.Left);
+        await _windowManager.UpdateWindows();
     }
 }
